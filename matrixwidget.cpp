@@ -49,18 +49,52 @@ void MatrixWidget::initHeaders()
     // 设置表头样式
     horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    horizontalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; background-color: #4CAF50;}");
-    verticalHeader()->setStyleSheet("QHeaderView::section { font-weight: bold; background-color: #2196F3;}");
 
-    this->setStyleSheet(
-        "QTableWidget::item:selected {"
-        "   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
-        "                               stop: 0 #f0f0f0, stop: 1 #e0e0e0);"
-        "   border: 2px outset #909090;"
-        "   border-radius: 3px;"
-        "   font-weight: bold;"
-        "}"
-        );
+    horizontalHeader()->setStyleSheet(R"(
+        QHeaderView::section {
+            font-weight: bold;
+            background-color: #4CAF50;
+            font-size: 14px; /* 统一字体大小（按需调整：14-18px） */
+            font-family: 微软雅黑; /* 可选：统一字体类型，适配嵌入式板 */
+            color: #336666; /* 可选：添加文字颜色，避免背景色覆盖 */
+        }
+    )");
+
+    // 2. 垂直表头样式（与水平表头字体大小一致）
+    verticalHeader()->setStyleSheet(R"(
+        QHeaderView::section {
+            font-weight: bold;
+            background-color: #2196F3;
+            font-size: 14px; /* 与水平表头字体大小完全一致 */
+            font-family: 微软雅黑;
+            color: #336666; /* 可选：文字白色更醒目 */
+        }
+    )");
+
+    this->setStyleSheet(R"(
+        /* 表格单元格默认样式 */
+        QTableWidget {
+            font-size: 14px;
+            font-family: 微软雅黑;
+            color: #333;
+            background-color: #336666; /* 表格整体背景，与夹角色一致 */
+        }
+        /* 左上角夹角区域（核心：QTableCornerButton） */
+        QTableWidget QTableCornerButton::section {
+            background-color: #336666; /* 与背景色统一 */
+            border: none; /* 去掉默认边框，避免缝隙 */
+        }
+        /* 选中单元格样式（保持原有效果） */
+        QTableWidget::item:selected {
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 #f0f0f0, stop: 1 #e0e0e0);
+            border: 2px outset #909090;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+    )");
 }
 
 void MatrixWidget::initCells()

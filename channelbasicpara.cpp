@@ -20,150 +20,195 @@ void ChannelBasicPara::setupUI()
             background-color: #336666;
         }
 
+        /* 主GroupBox样式 */
         QGroupBox {
             color: #CCEEEE;
             font-family: "Microsoft YaHei";
-            font-size: 14px;
+            font-size: 20px;  /* 16px -> 20px */
             font-weight: bold;
-            border: 2px solid #559999;
-            border-radius: 8px;
-            margin-top: 1ex;
-            padding-top: 2px;
+            border: 3px solid #559999;  /* 2px -> 3px */
+            border-radius: 12px;  /* 8px -> 12px */
+            margin-top: 2ex;  /* 1ex -> 2ex */
+            padding-top: 4px;  /* 2px -> 4px */
             background-color: #225555;
         }
 
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top center;
-            padding: 0 8px;
+            padding: 2px 12px;  /* 0 8px -> 2px 12px */
             background-color: #448888;
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
+            font-size: 18px;  /* 添加字体大小 */
         }
 
+        /* 标签样式 */
         QLabel {
             color: #99CCCC;
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 18px;  /* 16px -> 18px */
             font-weight: bold;
+            margin: 4px 0px;  /* 添加边距 */
         }
 
         QLabel#valueLabel {
             color: #CCEEEE;
-            font-size: 16px;
+            font-size: 18px;  /* 16px -> 18px */
             font-weight: bold;
             background-color: #224444;
-            border-radius: 4px;
-            padding: 4px 8px;
-            min-width: 60px;
+            border-radius: 6px;  /* 4px -> 6px */
+            padding: 8px 12px;  /* 4px 8px -> 8px 12px */
+            min-width: 80px;  /* 60px -> 80px */
+            min-height: 24px;  /* 添加最小高度 */
             qproperty-alignment: AlignCenter;
         }
 
         /* 噪声功率滚动条样式 - 蓝色渐变 */
         QSlider#noisePowerSlider::groove:horizontal {
-            border: 1px solid #5AA469;
-            height: 8px;
+            border: 2px solid #5AA469;  /* 1px -> 2px */
+            height: 12px;  /* 8px -> 12px */
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #3D7248, stop:0.5 #5AA469, stop:1 #7CD68B);
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
         }
 
         QSlider#noisePowerSlider::handle:horizontal {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #7CD68B, stop:0.8 #5AA469, stop:1 #3D7248);
-            border: 2px solid #5AA469;
-            width: 20px;
-            margin: -8px 0;
-            border-radius: 10px;
+            border: 3px solid #5AA469;  /* 2px -> 3px */
+            width: 24px;  /* 20px -> 24px */
+            margin: -10px 0;  /* -8px 0 -> -10px 0 */
+            border-radius: 12px;  /* 10px -> 12px */
         }
 
         QSlider#noisePowerSlider::handle:horizontal:hover {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #9EF5AD, stop:0.8 #7CD68B, stop:1 #5AA469);
-            border: 2px solid #7CD68B;
+            border: 3px solid #7CD68B;  /* 2px -> 3px */
         }
 
         QSlider#noisePowerSlider::sub-page:horizontal {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #3D7248, stop:0.5 #5AA469, stop:1 #7CD68B);
-            border: 1px solid #5AA469;
-            border-radius: 4px;
+            border: 2px solid #5AA469;  /* 1px -> 2px */
+            border-radius: 6px;  /* 4px -> 6px */
         }
 
         /* 衰减功率滚动条样式 - 橙色渐变 */
         QSlider#attenuationPowerSlider::groove:horizontal {
-            border: 1px solid #D4A15F;
-            height: 8px;
+            border: 2px solid #D4A15F;  /* 1px -> 2px */
+            height: 12px;  /* 8px -> 12px */
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #8B6B3D, stop:0.5 #D4A15F, stop:1 #FFD700);
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
         }
 
         QSlider#attenuationPowerSlider::handle:horizontal {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #FFD700, stop:0.8 #D4A15F, stop:1 #8B6B3D);
-            border: 2px solid #D4A15F;
-            width: 20px;
-            margin: -8px 0;
-            border-radius: 10px;
+            border: 3px solid #D4A15F;  /* 2px -> 3px */
+            width: 24px;  /* 20px -> 24px */
+            margin: -10px 0;  /* -8px 0 -> -10px 0 */
+            border-radius: 12px;  /* 10px -> 12px */
         }
 
         QSlider#attenuationPowerSlider::handle:horizontal:hover {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #FFE55C, stop:0.8 #FFD700, stop:1 #D4A15F);
-            border: 2px solid #FFD700;
+            border: 3px solid #FFD700;  /* 2px -> 3px */
         }
 
         QSlider#attenuationPowerSlider::sub-page:horizontal {
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #8B6B3D, stop:0.5 #D4A15F, stop:1 #FFD700);
-            border: 1px solid #D4A15F;
-            border-radius: 4px;
+            border: 2px solid #D4A15F;  /* 1px -> 2px */
+            border-radius: 6px;  /* 4px -> 6px */
         }
 
         QDial {
             background-color: #224444;
+            min-width: 150px;
+            min-height: 150px;
+            max-width: 180px;
+            max-height: 180px;
         }
 
         QDial::groove {
-            background: qconicalgradient(cx:0.5, cy:0.5, angle:0, stop:0 #225555, stop:1 #448888);
+            background: qconicalgradient(cx:0.5, cy:0.5, angle:0,
+                stop:0 #114444,
+                stop:0.2 #225555,
+                stop:0.5 #336666,
+                stop:0.8 #448888,
+                stop:1 #55AAAA);
+            width: 12px;
         }
 
         QDial::handle {
-            background: #99CCCC;
-            border: 2px solid #559999;
-            border-radius: 8px;
-            width: 16px;
-            height: 16px;
+            background: qradialgradient(cx:0.5, cy:0.5, radius:1.0,
+                stop:0 #FFFFFF,
+                stop:0.4 #CCEEEE,
+                stop:0.8 #99CCCC,
+                stop:1 #66AAAA);
+            border: 5px solid #66AAAA;
+            border-radius: 20px;
+            width: 40px;
+            height: 40px;
         }
 
         QDoubleSpinBox {
-            padding: 6px;
-            border: 1px solid #559999;
-            border-radius: 4px;
+            padding: 10px 40px 10px 10px;
+            border: 2px solid #559999;
+            border-radius: 6px;
             background-color: #224444;
             color: #CCEEEE;
             font-family: "Microsoft YaHei";
-            font-size: 12px;
-            min-width: 80px;
+            font-size: 14px;
+            min-width: 100px;
+            min-height: 40px;
         }
 
-        QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+        /* 移除复杂的定位，使用默认行为 */
+        QDoubleSpinBox::up-button {
             background-color: #448888;
             border: 1px solid #559999;
-            border-radius: 2px;
-            width: 16px;
+            border-radius: 0 3px 0 0;
+            width: 20px;
+        }
+
+        QDoubleSpinBox::down-button {
+            background-color: #448888;
+            border: 1px solid #559999;
+            border-radius: 0 0 3px 0;
+            width: 20px;
+        }
+
+        QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+            background-color: #559999;
+        }
+
+        QDoubleSpinBox::up-arrow {
+            width: 10px;
+            height: 10px;
+            background-color: #CCEEEE;
+        }
+
+        QDoubleSpinBox::down-arrow {
+            width: 10px;
+            height: 10px;
+            background-color: #CCEEEE;
         }
 
         QPushButton {
             background-color: #448888;
             color: #CCEEEE;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 12px 24px;  /* 10px 20px -> 12px 24px */
+            border-radius: 8px;  /* 6px -> 8px */
             font-family: "Microsoft YaHei";
-            font-size: 14px;
+            font-size: 16px;  /* 14px -> 16px */
             font-weight: bold;
-            min-width: 100px;
+            min-width: 120px;  /* 100px -> 120px */
+            min-height: 44px;  /* 添加最小高度 */
         }
 
         QPushButton:hover {
@@ -173,53 +218,46 @@ void ChannelBasicPara::setupUI()
         QPushButton:pressed {
             background-color: #66AAAA;
         }
+
+        QPushButton:disabled {
+            background-color: #225555;
+            color: #88AAAA;
+        }
+
+        /* 新增：输入框样式 */
+        QLineEdit, QTextEdit, QComboBox {
+            font-family: "Microsoft YaHei";
+            font-size: 14px;
+            padding: 8px 12px;
+            border: 2px solid #559999;
+            border-radius: 6px;
+            background-color: #224444;
+            color: #CCEEEE;
+            min-height: 36px;
+            selection-background-color: #448888;
+        }
+
+        QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+            border: 2px solid #66AAAA;
+            background-color: #225555;
+        }
+
+        QComboBox::drop-down {
+            border: none;
+            width: 24px;
+        }
+
+        QComboBox::down-arrow {
+            width: 12px;
+            height: 12px;
+        }
     )");
-
-    // 创建主水平布局来包含箭头和内容
-    QHBoxLayout *outerHorizontalLayout = new QHBoxLayout();
-
-    // 左侧箭头（静态提示）
-    QLabel *leftArrow = new QLabel("◀");
-    leftArrow->setAlignment(Qt::AlignCenter);
-    leftArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    leftArrow->setFixedSize(80, 80);
-    leftArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(leftArrow);
-
-    // 中央内容区域
-    QVBoxLayout *contentLayout = new QVBoxLayout();
-
-    // 创建标题
-    QLabel *titleLabel = new QLabel("参数设置");
-    titleLabel->setStyleSheet(R"(
-    QLabel {
-        color: #CCEEEE;
-        font-family: "Microsoft YaHei";
-        font-size: 18px;
-        font-weight: bold;
-        padding: 10px;
-        background-color: #225555;
-        border-radius: 8px;
-        qproperty-alignment: AlignCenter;
-    }
-)");
-    //contentLayout->addWidget(titleLabel);
 
     // 创建功率参数组（噪声功率 + 衰减功率）
     createPowerParametersGroup();
     //createCommunicationDistanceGroup();
 
-    contentLayout->addWidget(m_powerGroup);
+    mainLayout->addWidget(m_powerGroup);
     //contentLayout->addWidget(m_distanceGroup);
 
     // 添加按钮区域
@@ -234,35 +272,8 @@ void ChannelBasicPara::setupUI()
     buttonLayout->addWidget(m_resetButton);
     buttonLayout->addWidget(m_applyButton);
 
-    //ontentLayout->addLayout(buttonLayout);
-
-    // 将内容布局添加到外层水平布局
-    outerHorizontalLayout->addLayout(contentLayout);
-
-    // 右侧箭头（静态提示）
-    QLabel *rightArrow = new QLabel("▶");
-    rightArrow->setAlignment(Qt::AlignCenter);
-    rightArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    rightArrow->setFixedSize(80, 80);
-    rightArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(rightArrow);
-
-    // 设置外层布局的拉伸因子
-    outerHorizontalLayout->setStretchFactor(leftArrow, 0);        // 左箭头不拉伸
-    outerHorizontalLayout->setStretchFactor(contentLayout, 1);    // 内容区域拉伸
-    outerHorizontalLayout->setStretchFactor(rightArrow, 0);       // 右箭头不拉伸
-
-    mainLayout->addLayout(outerHorizontalLayout);
+    //mainLayout->addLayout(buttonLayout);
+    setLayout(mainLayout);
 }
 
 void ChannelBasicPara::createPowerParametersGroup()

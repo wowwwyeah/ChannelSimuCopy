@@ -2,12 +2,12 @@
 #include "mainwindow.h"
 #include "swipestackedwidget.h"
 #include "pageindicator.h"
-#include "pagewidget.h"
 #include "configmanager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QScreen>
+#include <QThread>
 #include <QToolBar>
 #include <QStatusBar>
 #include <QApplication>
@@ -51,9 +51,55 @@ void SubWindow::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
+    // 创建包含箭头和堆叠窗口的水平布局
+    QHBoxLayout *stackedLayout = new QHBoxLayout();
+
+    // === 左侧箭头按钮 ===
+    m_leftArrowButton = new QPushButton("◀", this);
+    m_leftArrowButton->setFixedSize(60, 60);
+    m_leftArrowButton->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgba(255, 255, 255, 30);"
+        "   border: 2px solid rgba(255, 255, 255, 80);"
+        "   border-radius: 30px;"
+        "   color: rgba(255, 255, 255, 80);"
+        "   font-size: 24px;"
+        "   font-weight: bold;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgba(255, 255, 255, 50);"
+        "   border-color: rgba(255, 255, 255, 120);"
+        "   color: rgba(255, 255, 255, 120);"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: rgba(255, 255, 255, 70);"
+        "}"
+        "QPushButton:disabled {"
+        "   background-color: rgba(255, 255, 255, 10);"
+        "   border-color: rgba(255, 255, 255, 30);"
+        "   color: rgba(255, 255, 255, 30);"
+        "}"
+        );
+
     // 创建滑动堆叠窗口
     m_stackedWidget = new SwipeStackedWidget(this);
-    mainLayout->addWidget(m_stackedWidget);
+
+    // === 右侧箭头按钮 ===
+    m_rightArrowButton = new QPushButton("▶", this);
+    m_rightArrowButton->setFixedSize(60, 60);
+    m_rightArrowButton->setStyleSheet(m_leftArrowButton->styleSheet());
+
+    // 添加到水平布局
+    stackedLayout->addWidget(m_leftArrowButton);
+    stackedLayout->addWidget(m_stackedWidget);
+    stackedLayout->addWidget(m_rightArrowButton);
+
+    // 设置拉伸因子，让堆叠窗口占据主要空间
+    stackedLayout->setStretchFactor(m_leftArrowButton, 0);
+    stackedLayout->setStretchFactor(m_stackedWidget, 1);
+    stackedLayout->setStretchFactor(m_rightArrowButton, 0);
+
+    mainLayout->addLayout(stackedLayout);
 
     // 创建页面指示器
     m_pageIndicator = new PageIndicator(m_pageTitle.size(), this);
@@ -80,6 +126,10 @@ void SubWindow::setupUI()
     // 添加到工具栏
     closetoolBar->addAction(closeAction);
 
+    QWidget *rightFixedSpacer = new QWidget();
+    rightFixedSpacer->setFixedWidth(60); // 右侧留15px间距（可按需调整）
+    rightFixedSpacer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    closetoolBar->addWidget(rightFixedSpacer);
 
     // 创建导航工具栏
     QToolBar *toolBar = new QToolBar(this);
@@ -95,7 +145,9 @@ void SubWindow::setupUI()
     m_nextButton = new QPushButton("下一页", this);
     m_startButton = new QPushButton("开始模拟", this);
     m_prevButton->setEnabled(true);
+    m_nextButton->setEnabled(true);
     m_startButton->setEnabled(true);
+    toolBar->setStyleSheet("QToolBar::separator { width: 30px; }"); // 分隔符宽度设为20px
     toolBar->addWidget(m_prevButton);
     toolBar->addSeparator();
     toolBar->addWidget(m_startButton);
@@ -153,14 +205,12 @@ void SubWindow::setupUI()
     connect(m_nextButton, &QPushButton::clicked, this, &SubWindow::goToNextPage);
     connect(m_startButton, &QPushButton::clicked, this, &SubWindow::startChannelSimu);
 
-    // 启用滑动（默认已启用）
-    m_stackedWidget->enableSwipe(true);
-
-    // 设置动画时长
-    m_stackedWidget->setAnimationDuration(400);
+    // 连接箭头按钮信号槽
+    connect(m_leftArrowButton, &QPushButton::clicked, this, &SubWindow::goToPrevPage);
+    connect(m_rightArrowButton, &QPushButton::clicked, this, &SubWindow::goToNextPage);
 
     // 连接信号
-    connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &SubWindow::onSwipeFinished);
+    //connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &SubWindow::onSwipeFinished);
     connect(m_stackedWidget, &SwipeStackedWidget::pageChanged, this, &SubWindow::onPageChanged);
 
     // 状态栏
@@ -242,14 +292,6 @@ void SubWindow::createPages()
     m_pageIndicator->setCurrentIndex(0);
 }
 
-void SubWindow::onPageButtonClicked()
-{
-    PageWidget *page = qobject_cast<PageWidget*>(sender());
-    if (page) {
-        statusBar()->showMessage(QString("点击了: %1").arg(page->title()));
-    }
-}
-
 void SubWindow::onSwipeFinished()
 {
     int currentIndex = m_stackedWidget->currentIndex();
@@ -264,7 +306,7 @@ void SubWindow::onPageChanged(int index)
 {
     m_prevButton->setEnabled(true);
     m_nextButton->setEnabled(true);
-    m_startButton->setEnabled(index < 1);
+    //m_startButton->setEnabled(index < 1);
     m_pageIndicator->setCurrentIndex(index);
     statusBar()->showMessage(QString("当前页面: %1/%2").arg(index + 1).arg(m_pageTitle.size()));
 }
@@ -303,22 +345,40 @@ void SubWindow::closeSubWindow()
 
 void SubWindow::startChannelSimu()
 {
-    ModelParaSetting config;
-    config.channelNum = m_mainWindow->getChannelNum();
-    config.modelName = m_channelModelSelect->getSelectedRadioButtonText();
-    config.noisePower = m_channelBasicPara->getNoisePower();
-    config.signalAnt = m_channelBasicPara->getAttenuationPower();
-    config.comDistance = m_channelBasicPara->getCommunicationDistance();
-    config.filterNum = m_multipathPara->getFilterNum();
-    config.multipathNum = m_multipathPara->getMultipathCount();
-    config.multipathType = m_multipathPara->getMultipathPara();
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("开始模拟"),
+        tr("确定要下发配置开始模拟吗？"),
+        QMessageBox::Yes | QMessageBox::No
+        );
 
-    QMutexLocker locker(&globalMutex);
-    globalParaMap[config.modelName] = config;
+    if (reply == QMessageBox::Yes) {
 
-    m_mainWindow->setChannelPara(config);
+        ModelParaSetting config;
+        config.channelNum = m_mainWindow->getChannelNum();
+        qDebug() << "信道编号: " << config.channelNum;
+        config.modelName = m_channelModelSelect->getSelectedRadioButtonText();
+        qDebug() << "模型名称: " << config.modelName;
+        config.noisePower = m_channelBasicPara->getNoisePower();
+        qDebug() << "噪声功率: " << config.noisePower;
+        config.signalAnt = m_channelBasicPara->getAttenuationPower();
+        qDebug() << "信号衰减: " << config.signalAnt;
+        config.comDistance = m_channelBasicPara->getCommunicationDistance();
+        qDebug() << "通信距离: " << config.comDistance;
+        config.filterNum = m_multipathPara->getFilterNum();
+        qDebug() << "滤波编号: " << config.filterNum;
+        config.multipathNum = m_multipathPara->getMultipathCount();
+        qDebug() << "多径数量: " << config.multipathNum;
+        config.multipathType = m_multipathPara->getMultipathPara();
+
+
+        QMutexLocker locker(&globalMutex); // 子线程加锁，不阻塞 UI
+        globalParaMap[config.modelName] = config;
+        m_mainWindow->setChannelPara(config); // 注意：若 setChannelPara 操作 UI，需改为信号！
+
+    }
+
 }
-
 
 
 QString SubWindow::getStatusStyle(const QString &status)

@@ -18,7 +18,7 @@ public:
 
     bool openDatabase(const QString &dbName);
     bool createTable();
-    bool insertParaConfig(ModelParaSetting &config);
+    bool insertParaConfig(const ModelParaSetting &config);
     QVector<ModelParaSetting> getAllConfigs();
     bool updateParaConfig(const QString &name, ModelParaSetting &config);
     bool deleteParaConfig(const QString &name);

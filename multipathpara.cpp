@@ -5,8 +5,10 @@
 MultiPathPara::MultiPathPara(QWidget *parent)
     : QWidget(parent)
     , m_multipathCount(3)
+    , m_filterNum(3)
 {
     setupUI();
+    initConnections();
 }
 
 void MultiPathPara::setupUI()
@@ -19,66 +21,71 @@ void MultiPathPara::setupUI()
             background-color: #336666;
         }
 
+        /* 主GroupBox样式 */
         QGroupBox {
             color: #CCEEEE;
             font-family: "Microsoft YaHei";
-            font-size: 14px;
+            font-size: 20px;  /* 16px -> 20px */
             font-weight: bold;
-            border: 2px solid #559999;
-            border-radius: 8px;
-            margin-top: 1ex;
-            padding-top: 10px;
+            border: 3px solid #559999;  /* 2px -> 3px */
+            border-radius: 12px;  /* 8px -> 12px */
+            margin-top: 2ex;  /* 1ex -> 2ex */
+            padding-top: 4px;  /* 2px -> 4px */
             background-color: #225555;
         }
 
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top center;
-            padding: 0 8px;
+            padding: 2px 12px;  /* 0 8px -> 2px 12px */
             background-color: #448888;
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
+            font-size: 18px;  /* 添加字体大小 */
         }
 
+        /* 标签样式 */
         QLabel {
             color: #99CCCC;
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 18px;  /* 16px -> 18px */
             font-weight: bold;
+            margin: 4px 0px;  /* 添加边距 */
         }
 
         QLabel#valueLabel {
             color: #CCEEEE;
-            font-size: 16px;
+            font-size: 18px;  /* 16px -> 18px */
             font-weight: bold;
             background-color: #224444;
-            border-radius: 4px;
-            padding: 4px 8px;
-            min-width: 60px;
+            border-radius: 6px;  /* 4px -> 6px */
+            padding: 8px 12px;  /* 4px 8px -> 8px 12px */
+            min-width: 80px;  /* 60px -> 80px */
+            min-height: 24px;  /* 添加最小高度 */
             qproperty-alignment: AlignCenter;
         }
 
         /* 多径数量滚动条样式 - 紫色渐变 */
         QSlider#multipathCountSlider::groove:horizontal {
-            border: 1px solid #9B6BCC;
-            height: 8px;
+            border: 2px solid #9B6BCC;  /* 1px -> 2px */
+            height: 12px;  /* 8px -> 12px */
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 #6B4B8B, stop:0.5 #9B6BCC, stop:1 #CCAAFF);
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
         }
 
         QSlider#multipathCountSlider::handle:horizontal {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #CCAAFF, stop:0.8 #9B6BCC, stop:1 #6B4B8B);
-            border: 2px solid #9B6BCC;
-            width: 20px;
-            margin: -8px 0;
-            border-radius: 10px;
+            border: 3px solid #9B6BCC;  /* 2px -> 3px */
+            width: 24px;  /* 20px -> 24px */
+            margin: -10px 0;  /* -8px 0 -> -10px 0 */
+            border-radius: 12px;  /* 10px -> 12px */
         }
 
         QSlider#multipathCountSlider::handle:horizontal:hover {
             background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #EECCFF, stop:0.8 #CCAAFF, stop:1 #9B6BCC);
-            border: 2px solid #CCAAFF;
+            border: 3px solid #CCAAFF;  /* 2px -> 3px */
         }
 
         /* 表格样式 */
@@ -86,16 +93,17 @@ void MultiPathPara::setupUI()
             background-color: #224444;
             alternate-background-color: #2A5555;
             gridline-color: #559999;
-            border: 1px solid #559999;
-            border-radius: 4px;
+            border: 2px solid #559999;  /* 1px -> 2px */
+            border-radius: 6px;  /* 4px -> 6px */
             font-family: "Microsoft YaHei";
-            font-size: 11px;
+            font-size: 14px;  /* 11px -> 14px */
         }
 
         QTableWidget::item {
             color: #CCEEEE;
-            padding: 4px;
+            padding: 8px;  /* 4px -> 8px */
             border: none;
+            min-height: 24px;  /* 添加最小高度 */
         }
 
         QTableWidget::item:selected {
@@ -107,35 +115,44 @@ void MultiPathPara::setupUI()
             background-color: #336666;
             color: #CCEEEE;
             font-weight: bold;
-            border: 1px solid #559999;
+            border: 2px solid #559999;  /* 1px -> 2px */
         }
 
         QTableWidget::header:section {
             background-color: #448888;
             color: #CCEEEE;
-            padding: 6px;
+            padding: 10px;  /* 6px -> 10px */
             border: none;
             font-weight: bold;
+            font-size: 14px;  /* 添加字体大小 */
+            min-height: 28px;  /* 添加最小高度 */
         }
 
         /* 数字输入框样式 */
         QSpinBox, QDoubleSpinBox {
-            padding: 4px;
-            border: 1px solid #559999;
-            border-radius: 3px;
+            padding: 8px 12px;  /* 4px -> 8px 12px */
+            border: 2px solid #559999;  /* 1px -> 2px */
+            border-radius: 6px;  /* 3px -> 6px */
             background-color: #224444;
             color: #CCEEEE;
             font-family: "Microsoft YaHei";
-            font-size: 11px;
-            min-width: 60px;
+            font-size: 14px;  /* 11px -> 14px */
+            min-width: 80px;  /* 60px -> 80px */
+            min-height: 36px;  /* 添加最小高度 */
         }
 
         QSpinBox::up-button, QSpinBox::down-button,
         QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
             background-color: #448888;
-            border: 1px solid #559999;
-            border-radius: 1px;
-            width: 12px;
+            border: 2px solid #559999;  /* 1px -> 2px */
+            border-radius: 3px;  /* 1px -> 3px */
+            width: 20px;  /* 12px -> 20px */
+            height: 15px;  /* 添加高度 */
+        }
+
+        QSpinBox::up-button:hover, QSpinBox::down-button:hover,
+        QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+            background-color: #559999;
         }
 
         /* 按钮样式 */
@@ -143,12 +160,13 @@ void MultiPathPara::setupUI()
             background-color: #448888;
             color: #CCEEEE;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 12px 24px;  /* 8px 16px -> 12px 24px */
+            border-radius: 8px;  /* 6px -> 8px */
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 16px;  /* 12px -> 16px */
             font-weight: bold;
-            min-width: 80px;
+            min-width: 100px;  /* 80px -> 100px */
+            min-height: 44px;  /* 添加最小高度 */
         }
 
         QPushButton:hover {
@@ -166,55 +184,18 @@ void MultiPathPara::setupUI()
         QPushButton#generateButton:hover {
             background-color: #AC7CDD;
         }
+
+        QPushButton#generateButton:pressed {
+            background-color: #8A5BBB;
+        }
     )");
-
-    // 创建主水平布局来包含箭头和内容
-    QHBoxLayout *outerHorizontalLayout = new QHBoxLayout();
-
-    // 左侧箭头（静态提示）
-    QLabel *leftArrow = new QLabel("◀");
-    leftArrow->setAlignment(Qt::AlignCenter);
-    leftArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    leftArrow->setFixedSize(80, 80);
-    leftArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(leftArrow);
-
-    // 中央内容区域
-    QVBoxLayout *contentLayout = new QVBoxLayout();
-
-    // 创建标题
-    QLabel *titleLabel = new QLabel("多径信道参数设置");
-    titleLabel->setStyleSheet(R"(
-    QLabel {
-        color: #CCEEEE;
-        font-family: "Microsoft YaHei";
-        font-size: 18px;
-        font-weight: bold;
-        padding: 10px;
-        background-color: #225555;
-        border-radius: 8px;
-        qproperty-alignment: AlignCenter;
-    }
-)");
-    //contentLayout->addWidget(titleLabel);
-
     // 创建多径数量设置组
     createMultipathCountGroup();
-    //contentLayout->addWidget(m_multipathCountGroup);
+    //mainLayout->addWidget(m_multipathCountGroup);
 
     // 创建路径参数组
     createPathParametersGroup();
-    contentLayout->addWidget(m_pathParametersGroup);
+    mainLayout->addWidget(m_pathParametersGroup);
 
     // 添加按钮区域
     QHBoxLayout *buttonLayout = new QHBoxLayout();
@@ -232,38 +213,12 @@ void MultiPathPara::setupUI()
     buttonLayout->addWidget(m_resetButton);
     buttonLayout->addWidget(m_applyButton);
 
-    //contentLayout->addLayout(buttonLayout);
+    //mainLayout->addLayout(buttonLayout);
+
+    setLayout(mainLayout);
 
     // 初始更新表格
     updatePathParametersTable();
-
-    // 将内容布局添加到外层水平布局
-    outerHorizontalLayout->addLayout(contentLayout);
-
-    // 右侧箭头（静态提示）
-    QLabel *rightArrow = new QLabel("▶");
-    rightArrow->setAlignment(Qt::AlignCenter);
-    rightArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    rightArrow->setFixedSize(80, 80);
-    rightArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(rightArrow);
-
-    // 设置外层布局的拉伸因子
-    outerHorizontalLayout->setStretchFactor(leftArrow, 0);        // 左箭头不拉伸
-    outerHorizontalLayout->setStretchFactor(contentLayout, 1);    // 内容区域拉伸
-    outerHorizontalLayout->setStretchFactor(rightArrow, 0);       // 右箭头不拉伸
-
-    mainLayout->addLayout(outerHorizontalLayout);
 }
 
 void MultiPathPara::createMultipathCountGroup()
@@ -298,8 +253,6 @@ void MultiPathPara::createMultipathCountGroup()
     m_multipathCountSlider->setTickPosition(QSlider::TicksBelow);
     m_multipathCountSlider->setTickInterval(1);
 
-    connect(m_multipathCountSlider, &QSlider::valueChanged, this, &MultiPathPara::onMultipathCountChanged);
-
     sliderLayout->addWidget(minLabel);
     sliderLayout->addWidget(m_multipathCountSlider);
     sliderLayout->addWidget(maxLabel);
@@ -313,8 +266,8 @@ void MultiPathPara::createMultipathCountGroup()
     m_multipathCountSpinBox->setRange(MULTIPATH_COUNT_MIN, MULTIPATH_COUNT_MAX);
     m_multipathCountSpinBox->setValue(m_multipathCount);
 
-    connect(m_multipathCountSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MultiPathPara::onMultipathCountChanged);
+    //connect(m_multipathCountSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+    //        this, &MultiPathPara::onMultipathCountChanged);
 
     spinBoxLayout->addWidget(inputLabel);
     spinBoxLayout->addWidget(m_multipathCountSpinBox);
@@ -328,32 +281,97 @@ void MultiPathPara::createPathParametersGroup()
 
     QVBoxLayout *layout = new QVBoxLayout(m_pathParametersGroup);
 
-    // 数字输入
-    QHBoxLayout *spinBoxLayout = new QHBoxLayout();
-    QLabel *inputLabel = new QLabel("多径数量:");
-    inputLabel->setStyleSheet("color: #CCAAFF;");
-    m_multipathCountSpinBox = new QSpinBox();
-    m_multipathCountSpinBox->setRange(MULTIPATH_COUNT_MIN, MULTIPATH_COUNT_MAX);
-    m_multipathCountSpinBox->setValue(m_multipathCount);
+    // 水平布局：多径数量（标签+加减） + 滤波器编号（标签+加减）
+    QHBoxLayout *ctrlLayout = new QHBoxLayout();
 
-    connect(m_multipathCountSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MultiPathPara::onMultipathCountChanged);
+    // ========== 1. 多径数量：标签 + 减号 + 数值 + 加号 ==========
+    QWidget *multipathWidget = new QWidget();
+    QHBoxLayout *multipathLayout = new QHBoxLayout(multipathWidget);
+    multipathLayout->setContentsMargins(0, 0, 0, 0); // 去掉内边距
+
+    QLabel *inputLabel = new QLabel("多径数量:");
+    inputLabel->setStyleSheet("color: #CCAAFF; font-size: 18px;");
+    // 减号按钮
+    m_multipathSubBtn = new QPushButton("-");
+    m_multipathSubBtn->setStyleSheet(R"(
+        QPushButton {
+            background-color: #2C5555;
+            color: white;
+            border: none;
+            width: 24px;    /* 缩小按钮宽度 */
+            height: 24px;   /* 缩小按钮高度 */
+            font-size: 18px;/* 加减号字体同步缩小 */
+            font-weight: bold;
+            border-radius: 3px 0 0 3px; /* 圆角同步缩小 */
+            padding: 0px;   /* 去掉按钮内边距 */
+        }
+        QPushButton:hover {
+            background-color: #4CAF50;
+        }
+        QPushButton:disabled {
+            background-color: #666666;
+            color: #999999;
+        }
+    )");
+
+    // 数值显示标签
+    m_multipathValueLabel = new QLabel(QString::number(m_multipathCount));
+    m_multipathValueLabel->setStyleSheet(R"(
+        QLabel {
+            color: #CCAAFF;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #2C5555;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+    )");
+    m_multipathValueLabel->setAlignment(Qt::AlignCenter); // 数值居中
+
+    // 加号按钮
+    m_multipathAddBtn = new QPushButton("+");
+    m_multipathAddBtn->setStyleSheet(m_multipathSubBtn->styleSheet());
+
+    // 添加到多径数量布局
+    multipathLayout->addWidget(inputLabel);
+    multipathLayout->addWidget(m_multipathSubBtn);
+    multipathLayout->addWidget(m_multipathValueLabel);
+    multipathLayout->addWidget(m_multipathAddBtn);
+    multipathLayout->addStretch(); // 右侧拉伸
+
+    // ========== 2. 滤波器编号：标签 + 减号 + 数值 + 加号 ==========
+    QWidget *filterWidget = new QWidget();
+    QHBoxLayout *filterLayout = new QHBoxLayout(filterWidget);
+    filterLayout->setContentsMargins(0, 0, 0, 0);
 
     QLabel *filterLabel = new QLabel("滤波器编号:");
-    filterLabel->setStyleSheet("color: #CCAAFF;");
-    m_filterNumSpinBox = new QSpinBox();
-    m_filterNumSpinBox->setRange(MULTIPATH_COUNT_MIN, MULTIPATH_COUNT_MAX);
-    m_filterNumSpinBox->setValue(m_multipathCount);
+    filterLabel->setStyleSheet("color: #CCAAFF; font-size: 18px;");
 
-    connect(m_filterNumSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &MultiPathPara::onFilterNumChanged);
+    // 减号按钮
+    m_filterSubBtn = new QPushButton("-");
+    m_filterSubBtn->setStyleSheet(m_multipathSubBtn->styleSheet()); // 复用样式
 
-    spinBoxLayout->addWidget(inputLabel);
-    spinBoxLayout->addWidget(m_multipathCountSpinBox);
-    spinBoxLayout->addStretch();
-    spinBoxLayout->addWidget(filterLabel);
-    spinBoxLayout->addWidget(m_filterNumSpinBox);
-    layout->addLayout(spinBoxLayout);
+    // 数值显示标签
+    m_filterNumValueLabel = new QLabel(QString::number(m_filterNum));
+    m_filterNumValueLabel->setStyleSheet(m_multipathValueLabel->styleSheet()); // 复用样式
+    m_filterNumValueLabel->setAlignment(Qt::AlignCenter);
+
+    // 加号按钮
+    m_filterAddBtn = new QPushButton("+");
+    m_filterAddBtn->setStyleSheet(m_multipathAddBtn->styleSheet()); // 复用样式
+
+    // 添加到滤波器编号布局
+    filterLayout->addWidget(filterLabel);
+    filterLayout->addWidget(m_filterSubBtn);
+    filterLayout->addWidget(m_filterNumValueLabel);
+    filterLayout->addWidget(m_filterAddBtn);
+    filterLayout->addStretch();
+
+    // ========== 3. 布局整合 ==========
+    ctrlLayout->addWidget(multipathWidget);
+    ctrlLayout->addStretch(); // 两个控件之间拉伸
+    ctrlLayout->addWidget(filterWidget);
+    layout->addLayout(ctrlLayout);
 
     // 创建表格
     m_pathTable = new QTableWidget();
@@ -368,10 +386,70 @@ void MultiPathPara::createPathParametersGroup()
     m_pathTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_pathTable->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
-    // 连接表格变化信号
-    connect(m_pathTable, &QTableWidget::cellChanged, this, &MultiPathPara::onPathParameterChanged);
+    m_pathTable->setStyleSheet(R"(
+        /* 表格内容字体 */
+        QTableWidget {
+            background-color: #336666; /* 与SimuListView保持配色一致 */
+            color: white; /* 文字颜色，避免深色背景看不见 */
+            font-size: 14px; /* 内容字体大小（按需调整：14-18px） */
+            font-family: 微软雅黑; /* 可选：嵌入式板推荐 DejaVu Sans/文泉驿微米黑 */
+        }
+        /* 表头字体（单独设置，更大更醒目） */
+        QHeaderView::section {
+            background-color: #2C5555;
+            color: white;
+            font-size: 16px; /* 表头字体大小（比内容大2px） */
+            font-weight: bold; /* 表头加粗 */
+            border: none; /* 去掉边框，保持样式统一 */
+        }
+        /* 选中行样式（可选，增强视觉） */
+        QTableWidget::item:selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* 编辑状态下的单元格字体（可选，保持一致） */
+        QTableWidget::item:editable {
+            font-size: 14px;
+            color: white;
+        }
+    )");
 
     layout->addWidget(m_pathTable);
+}
+
+void MultiPathPara::initConnections()
+{
+    connect(m_multipathSubBtn, &QPushButton::clicked, this, [this]() {
+        if (m_multipathCount > MULTIPATH_COUNT_MIN) {
+            m_multipathCount--;
+            m_multipathValueLabel->setText(QString::number(m_multipathCount));
+            updatePathParametersTable();
+        }
+    });
+    connect(m_multipathAddBtn, &QPushButton::clicked, this, [this]() {
+        if (m_multipathCount < MULTIPATH_COUNT_MAX) {
+            m_multipathCount++;
+            m_multipathValueLabel->setText(QString::number(m_multipathCount));
+            updatePathParametersTable();
+        }
+    });
+    connect(m_filterSubBtn, &QPushButton::clicked, this, [this]() {
+        if (m_filterNum > MULTIPATH_COUNT_MIN) {
+            m_filterNum--;
+            m_filterNumValueLabel->setText(QString::number(m_filterNum));
+            updatePathParametersTable();
+        }
+    });
+    connect(m_filterAddBtn, &QPushButton::clicked, this, [this]() {
+        if (m_filterNum < MULTIPATH_COUNT_MAX) {
+            m_filterNum++;
+            m_filterNumValueLabel->setText(QString::number(m_filterNum));
+            updatePathParametersTable();
+        }
+    });
+
+    // 连接表格变化信号
+    connect(m_pathTable, &QTableWidget::cellChanged, this, &MultiPathPara::onPathParameterChanged);
 }
 
 void MultiPathPara::updatePathParametersTable()
@@ -420,33 +498,6 @@ void MultiPathPara::updatePathParametersFromTable()
 {
     // 在实际应用中，这里可以更新内部数据结构
     // 目前数据直接存储在表格中，需要时从表格读取
-}
-
-void MultiPathPara::onMultipathCountChanged(int value)
-{
-    m_multipathCount = value;
-    m_multipathCountValueLabel->setText(QString::number(value));
-
-    // 同步滑块和数字输入框
-    m_multipathCountSlider->blockSignals(true);
-    m_multipathCountSlider->setValue(value);
-    m_multipathCountSlider->blockSignals(false);
-
-    m_multipathCountSpinBox->blockSignals(true);
-    m_multipathCountSpinBox->setValue(value);
-    m_multipathCountSpinBox->blockSignals(false);
-
-    // 更新表格
-    updatePathParametersTable();
-}
-
-void MultiPathPara::onFilterNumChanged(int value)
-{
-    m_filterNum = value;
-
-    m_filterNumSpinBox->blockSignals(true);
-    m_filterNumSpinBox->setValue(value);
-    m_filterNumSpinBox->blockSignals(false);
 }
 
 void MultiPathPara::onPathParameterChanged()
@@ -508,8 +559,6 @@ void MultiPathPara::resetToDefaults()
 {
     m_multipathCount = 3;
     m_multipathCountValueLabel->setText("3");
-    m_multipathCountSlider->setValue(3);
-    m_multipathCountSpinBox->setValue(3);
     updatePathParametersTable();
 }
 

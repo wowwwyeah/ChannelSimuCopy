@@ -29,10 +29,9 @@ public:
     // 设置副窗口引用
     void setSubWindow(SubWindow *subWindow);
     int getChannelNum();
-    void setChannelPara(ModelParaSetting &config);
+    void setChannelPara(const ModelParaSetting &config);
 
 private slots:
-    void onPageButtonClicked();
     void onSwipeFinished();
     void onPageChanged(int index);
     void goToNextPage();
@@ -63,6 +62,8 @@ private:
     SwipeStackedWidget *m_stackedWidget;
     PageIndicator *m_pageIndicator;
     QVector<QString> m_pageTitle;
+    QPushButton *m_leftArrowButton;
+    QPushButton *m_rightArrowButton;
     QPushButton *m_prevButton;
     QPushButton *m_nextButton;
     QPushButton *m_startButton;

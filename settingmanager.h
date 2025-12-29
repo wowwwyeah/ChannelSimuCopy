@@ -4,12 +4,14 @@
 #include <QObject>
 #include <QSettings>
 #include <QString>
+#include <QMutex>
 
 class SettingManager : public QObject
 {
     Q_OBJECT
 public:
     explicit SettingManager(const QString &configPath, QObject *parent = nullptr);
+    ~SettingManager() override = default;
 
     // 读取配置参数
     QString getDomain() const;

@@ -3,7 +3,6 @@
 #include "matrixwidget.h"
 #include "swipestackedwidget.h"
 #include "pageindicator.h"
-#include "pagewidget.h"
 #include <QScreen>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -57,9 +56,55 @@ void MainWindow::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
+    // 创建包含箭头和堆叠窗口的水平布局
+    QHBoxLayout *stackedLayout = new QHBoxLayout();
+
+    // === 左侧箭头按钮 ===
+    m_leftArrowButton = new QPushButton("◀", this);
+    m_leftArrowButton->setFixedSize(60, 60);
+    m_leftArrowButton->setStyleSheet(
+        "QPushButton {"
+        "   background-color: rgba(255, 255, 255, 30);"
+        "   border: 2px solid rgba(255, 255, 255, 80);"
+        "   border-radius: 30px;"
+        "   color: rgba(255, 255, 255, 80);"
+        "   font-size: 24px;"
+        "   font-weight: bold;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgba(255, 255, 255, 50);"
+        "   border-color: rgba(255, 255, 255, 120);"
+        "   color: rgba(255, 255, 255, 120);"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: rgba(255, 255, 255, 70);"
+        "}"
+        "QPushButton:disabled {"
+        "   background-color: rgba(255, 255, 255, 10);"
+        "   border-color: rgba(255, 255, 255, 30);"
+        "   color: rgba(255, 255, 255, 30);"
+        "}"
+        );
+
     // 创建滑动堆叠窗口
     m_stackedWidget = new SwipeStackedWidget(this);
-    mainLayout->addWidget(m_stackedWidget);
+
+    // === 右侧箭头按钮 ===
+    m_rightArrowButton = new QPushButton("▶", this);
+    m_rightArrowButton->setFixedSize(60, 60);
+    m_rightArrowButton->setStyleSheet(m_leftArrowButton->styleSheet());
+
+    // 添加到水平布局
+    stackedLayout->addWidget(m_leftArrowButton);
+    stackedLayout->addWidget(m_stackedWidget);
+    stackedLayout->addWidget(m_rightArrowButton);
+
+    // 设置拉伸因子，让堆叠窗口占据主要空间
+    stackedLayout->setStretchFactor(m_leftArrowButton, 0);
+    stackedLayout->setStretchFactor(m_stackedWidget, 1);
+    stackedLayout->setStretchFactor(m_rightArrowButton, 0);
+
+    mainLayout->addLayout(stackedLayout);
 
     // 创建页面指示器
     m_pageIndicator = new PageIndicator(m_pageTitle.size(), this);
@@ -80,6 +125,7 @@ void MainWindow::setupUI()
     m_startButton = new QPushButton("准备模拟", this);
     m_prevButton->setEnabled(true);
     m_startButton->setEnabled(true);
+    toolBar->setStyleSheet("QToolBar::separator { width: 30px; }"); // 分隔符宽度设为20px
     toolBar->addWidget(m_prevButton);
     toolBar->addSeparator();
     toolBar->addWidget(m_startButton);
@@ -140,14 +186,12 @@ void MainWindow::setupUI()
     connect(m_nextButton, &QPushButton::clicked, this, &MainWindow::goToNextPage);
     connect(m_startButton, &QPushButton::clicked, this, &MainWindow::goToNextWindow);
 
-    // 启用滑动（默认已启用）
-    m_stackedWidget->enableSwipe(true);
-
-    // 设置动画时长
-    m_stackedWidget->setAnimationDuration(400);
+    // 连接箭头按钮信号槽
+    connect(m_leftArrowButton, &QPushButton::clicked, this, &MainWindow::goToPrevPage);
+    connect(m_rightArrowButton, &QPushButton::clicked, this, &MainWindow::goToNextPage);
 
     // 连接信号
-    connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &MainWindow::onSwipeFinished);
+    //connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &MainWindow::onSwipeFinished);
     connect(m_stackedWidget, &SwipeStackedWidget::pageChanged, this, &MainWindow::onPageChanged);
 
     // 状态栏
@@ -247,16 +291,6 @@ void MainWindow::initDataBase()
     //m_paraConfigs = m_dbManager->getAllConfigs();
 }
 
-
-
-void MainWindow::onPageButtonClicked()
-{
-    PageWidget *page = qobject_cast<PageWidget*>(sender());
-    if (page) {
-        statusBar()->showMessage(QString("点击了: %1").arg(page->title()));
-    }
-}
-
 void MainWindow::onSwipeFinished()
 {
     int currentIndex = m_stackedWidget->currentIndex();
@@ -317,11 +351,14 @@ int MainWindow::getChannelNum()
     return m_channelSelect->getSimuChannel();
 }
 
-void MainWindow::setChannelPara(ModelParaSetting &config)
+void MainWindow::setChannelPara(const ModelParaSetting &config)
 {
     m_configManager->addConfigToMap(config.modelName, config);
     m_dbManager->insertParaConfig(config);
-    m_channelParaConfig->setChannelConfig(config);
+    m_simuListView->insertScenarioData(config);
+    //m_channelParaConfig->setChannelConfig(config);
+
+    QMessageBox::information(this, tr("下发成功"), tr("已成功下发配置！"));
 }
 
 QString MainWindow::getStatusStyle(const QString &status)

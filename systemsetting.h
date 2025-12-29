@@ -23,6 +23,9 @@ public:
     QString getMqttDomain() const;
     uint16_t getMqttPort() const;
     QString getDeviceAddr() const;
+    QString getExportPath() const;
+    QString getExportFormat() const;
+
 signals:
 
 private slots:

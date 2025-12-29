@@ -10,25 +10,21 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    basicparawidget.cpp \
     channelbasicpara.cpp \
     channelmodelselect.cpp \
     channelparaconifg.cpp \
     channelselect.cpp \
-    channelsimumain.cpp \
     configmanager.cpp \
     databasemanager.cpp \
     datamanager.cpp \
+    iohandler.cpp \
     main.cpp \
     mainwindow.cpp \
     matrixwidget.cpp \
-    modelselect.cpp \
     mqttclient.cpp \
     mqttmessageparser.cpp \
     multipathpara.cpp \
     pageindicator.cpp \
-    pagewidget.cpp \
-    parasetting.cpp \
     screenadapter.cpp \
     screensaver.cpp \
     settingmanager.cpp \
@@ -38,24 +34,20 @@ SOURCES += \
     systemsetting.cpp
 
 HEADERS += \
-    basicparawidget.h \
     channelbasicpara.h \
     channelmodelselect.h \
     channelparaconifg.h \
     channelselect.h \
-    channelsimumain.h \
     configmanager.h \
     databasemanager.h \
     datamanager.h \
+    iohandler.h \
     mainwindow.h \
     matrixwidget.h \
-    modelselect.h \
     mqttclient.h \
     mqttmessageparser.h \
     multipathpara.h \
     pageindicator.h \
-    pagewidget.h \
-    parasetting.h \
     screenadapter.h \
     screensaver.h \
     settingmanager.h \
@@ -82,5 +74,4 @@ DISTFILES += \
     res/image/circle_remove.png \
     res/image/logo.png
 
-FORMS += \
-    channelsimumain.ui
+FORMS +=

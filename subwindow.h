@@ -24,7 +24,6 @@ public:
     void setMainWindow(MainWindow *mainWindow);
 
 private slots:
-    void onPageButtonClicked();
     void onSwipeFinished();
     void onPageChanged(int index);
     void goToNextPage();
@@ -52,6 +51,8 @@ private:
     SwipeStackedWidget *m_stackedWidget;
     PageIndicator *m_pageIndicator;
     QVector<QString> m_pageTitle;
+    QPushButton *m_leftArrowButton;
+    QPushButton *m_rightArrowButton;
     QPushButton *m_prevButton;
     QPushButton *m_nextButton;
     QPushButton *m_startButton;

@@ -31,55 +31,42 @@ void SystemSetting::initUI()
 
     QLabel *title = new QLabel("系统设置");
     title->setAlignment(Qt::AlignmentFlag::AlignCenter);
-    title->setStyleSheet("color: #2196F3; font-family: 微软雅黑; font-size: 18px; font-weight: bold; margin: 8px;");
+    title->setStyleSheet("color: #2196F3; font-family: 微软雅黑; font-size: 22px; font-weight: bold; margin: 12px;");  // 18px -> 22px, 8px -> 12px
     layout->addWidget(title);
-
-    // --- 修改点：直接使用一个水平布局作为主布局 ---
-    QHBoxLayout *horizontalLayout = new QHBoxLayout(this);
-
-    // 左侧箭头（与其他页面保持一致）
-    QLabel *leftArrow = new QLabel("◀");
-    leftArrow->setAlignment(Qt::AlignCenter);
-    leftArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    leftArrow->setFixedSize(80, 80);
-    leftArrow->setCursor(Qt::ArrowCursor);
-    horizontalLayout->addWidget(leftArrow);
 
     // 中央内容区域 - 使用垂直布局
     QVBoxLayout *contentLayout = new QVBoxLayout();
 
     // 网络设置组
     QGroupBox *networkGroup = new QGroupBox(tr("网络设置"));
-    networkGroup->setStyleSheet("QGroupBox { font-weight: bold; }");
+    networkGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 18px; }");  // 添加字体大小
     networkGroup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QGridLayout *networkLayout = new QGridLayout(networkGroup);
+    networkLayout->setVerticalSpacing(12);  // 增加垂直间距
+    networkLayout->setHorizontalSpacing(12); // 增加水平间距
 
     // 第一行：MQTT地址和端口
     QLabel *mqttAddressLabel = new QLabel("MQTT地址:");
     mqttAddressLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    mqttAddressLabel->setStyleSheet("font-size: 16px;");  // 添加字体大小
 
     networkDomainEdit = new QLineEdit;
     networkDomainEdit->setPlaceholderText("例如: mqtt.broker.com");
     networkDomainEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    networkDomainEdit->setMinimumHeight(36);  // 设置最小高度
+    networkDomainEdit->setStyleSheet("font-size: 14px; padding: 8px 12px;");  // 添加样式
 
     QLabel *mqttPortLabel = new QLabel("端口:");
     mqttPortLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    mqttPortLabel->setStyleSheet("font-size: 16px;");  // 添加字体大小
 
     networkPortEdit = new QLineEdit;
     networkPortEdit->setPlaceholderText("例如: 1883");
-    networkPortEdit->setMaximumWidth(100);
+    networkPortEdit->setMaximumWidth(120);  // 100px -> 120px
     networkPortEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    networkPortEdit->setMinimumHeight(36);  // 设置最小高度
+    networkPortEdit->setStyleSheet("font-size: 14px; padding: 8px 12px;");  // 添加样式
 
     // 将地址和端口放在同一行
     networkLayout->addWidget(mqttAddressLabel, 0, 0);
@@ -90,10 +77,13 @@ void SystemSetting::initUI()
     // 第二行：设备地址
     QLabel *deviceAddressLabel = new QLabel("设备地址:");
     deviceAddressLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    deviceAddressLabel->setStyleSheet("font-size: 16px;");  // 添加字体大小
 
     networkAddrEdit = new QLineEdit;
     networkAddrEdit->setPlaceholderText("例如: 192.168.1.1");
     networkAddrEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    networkAddrEdit->setMinimumHeight(36);  // 设置最小高度
+    networkAddrEdit->setStyleSheet("font-size: 14px; padding: 8px 12px;");  // 添加样式
 
     networkLayout->addWidget(deviceAddressLabel, 1, 0);
     networkLayout->addWidget(networkAddrEdit, 1, 1, 1, 3); // 跨3列
@@ -113,26 +103,55 @@ void SystemSetting::initUI()
 
     // 导出设置组
     QGroupBox *exportGroup = new QGroupBox(tr("导出设置"));
-    exportGroup->setStyleSheet("QGroupBox { font-weight: bold; }");
+    exportGroup->setStyleSheet("QGroupBox { font-weight: bold; font-size: 18px; }");  // 添加字体大小
     exportGroup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QFormLayout *exportLayout = new QFormLayout(exportGroup);
+    exportLayout->setVerticalSpacing(12);  // 增加垂直间距
+    exportLayout->setHorizontalSpacing(12); // 增加水平间距
+
+    QLabel *exportPathLabel = new QLabel("导出路径:");
+    exportPathLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    exportPathLabel->setStyleSheet("font-size: 16px;");  // 添加字体大小
 
     QHBoxLayout *pathLayout = new QHBoxLayout;
     exportPathEdit = new QLineEdit;
     exportPathEdit->setPlaceholderText(tr("请选择导出文件保存路径"));
     exportPathEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    exportPathEdit->setMinimumHeight(36);  // 设置最小高度
+    exportPathEdit->setStyleSheet("font-size: 14px; padding: 8px 12px;");  // 添加样式
 
     QPushButton *browseBtn = new QPushButton(tr("浏览..."));
     browseBtn->setObjectName("browseBtn");
     browseBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    browseBtn->setMinimumHeight(36);  // 设置最小高度
+    browseBtn->setStyleSheet(
+        "QPushButton {"
+        "   background-color: #448888;"
+        "   color: #CCEEEE;"
+        "   border: none;"
+        "   padding: 8px 16px;"
+        "   border-radius: 6px;"
+        "   font-family: 'Microsoft YaHei';"
+        "   font-size: 14px;"
+        "   font-weight: bold;"
+        "   min-width: 80px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #559999;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: #66AAAA;"
+        "}"
+        );
 
     pathLayout->addWidget(exportPathEdit);
     pathLayout->addWidget(browseBtn);
 
-    exportLayout->addRow(tr("导出路径:"), pathLayout);
+    exportLayout->addRow(exportPathLabel, pathLayout);
 
     // 导出格式
     QLabel *formatLabel = new QLabel(tr("默认格式:"));
+    formatLabel->setStyleSheet("font-size: 16px;");  // 添加字体大小
     formatLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     exportFormatCombo = new QComboBox;
@@ -140,6 +159,8 @@ void SystemSetting::initUI()
     exportFormatCombo->addItem("JSON文件", "JSON");
     exportFormatCombo->addItem("XML文件", "XML");
     exportFormatCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    exportFormatCombo->setMinimumHeight(36);  // 设置最小高度
+    exportFormatCombo->setStyleSheet("font-size: 14px; padding: 8px 12px;");  // 添加样式
 
     exportLayout->addRow(formatLabel, exportFormatCombo);
 
@@ -150,21 +171,75 @@ void SystemSetting::initUI()
 
     // 操作按钮
     QHBoxLayout *buttonLayout = new QHBoxLayout;
-    buttonLayout->setSpacing(10);
+    buttonLayout->setSpacing(16);  // 10px -> 16px
 
     QPushButton *saveBtn = new QPushButton(tr("💾 保存设置"));
     saveBtn->setObjectName("saveSettingsBtn");
-    saveBtn->setStyleSheet("QPushButton { padding: 8px; background-color: #28a745; color: white; }");
+    saveBtn->setStyleSheet(
+        "QPushButton {"
+        "   padding: 12px 24px;"  // 8px -> 12px 24px
+        "   background-color: #28a745;"
+        "   color: white;"
+        "   border-radius: 8px;"  // 添加圆角
+        "   font-family: 'Microsoft YaHei';"
+        "   font-size: 16px;"  // 添加字体大小
+        "   font-weight: bold;"
+        "   min-width: 120px;"  // 添加最小宽度
+        "   min-height: 44px;"  // 添加最小高度
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #34ce57;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: #1e7e34;"
+        "}"
+        );
     saveBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     QPushButton *defaultsBtn = new QPushButton(tr("🔄 恢复默认"));
     defaultsBtn->setObjectName("restoreDefaultsBtn");
-    defaultsBtn->setStyleSheet("QPushButton { padding: 8px; background-color: #6c757d; color: white; }");
+    defaultsBtn->setStyleSheet(
+        "QPushButton {"
+        "   padding: 12px 24px;"
+        "   background-color: #6c757d;"
+        "   color: white;"
+        "   border-radius: 8px;"
+        "   font-family: 'Microsoft YaHei';"
+        "   font-size: 16px;"
+        "   font-weight: bold;"
+        "   min-width: 120px;"
+        "   min-height: 44px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #5a6268;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: #545b62;"
+        "}"
+        );
     defaultsBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     QPushButton *applyBtn = new QPushButton(tr("✅ 立即应用"));
     applyBtn->setObjectName("applySettingsBtn");
-    applyBtn->setStyleSheet("QPushButton { padding: 8px; background-color: #007bff; color: white; }");
+    applyBtn->setStyleSheet(
+        "QPushButton {"
+        "   padding: 12px 24px;"
+        "   background-color: #007bff;"
+        "   color: white;"
+        "   border-radius: 8px;"
+        "   font-family: 'Microsoft YaHei';"
+        "   font-size: 16px;"
+        "   font-weight: bold;"
+        "   min-width: 120px;"
+        "   min-height: 44px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: #0069d9;"
+        "}"
+        "QPushButton:pressed {"
+        "   background-color: #0062cc;"
+        "}"
+        );
     applyBtn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     buttonLayout->addWidget(saveBtn);
@@ -185,37 +260,11 @@ void SystemSetting::initUI()
     contentLayout->setStretch(2, 2);           // 导出设置组拉伸 (索引2)
     contentLayout->setStretch(3, 0);           // 按钮布局不拉伸 (索引3)
 
-    // 将内容布局添加到外层水平布局
-    horizontalLayout->addLayout(contentLayout);
-
-    // 右侧箭头（与其他页面保持一致）
-    QLabel *rightArrow = new QLabel("▶");
-    rightArrow->setAlignment(Qt::AlignCenter);
-    rightArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    rightArrow->setFixedSize(80, 80);
-    rightArrow->setCursor(Qt::ArrowCursor);
-    horizontalLayout->addWidget(rightArrow);
-
-    // 设置里层布局的拉伸因子
-    horizontalLayout->setStretchFactor(leftArrow, 0);        // 左箭头不拉伸
-    horizontalLayout->setStretchFactor(contentLayout, 1);    // 内容区域拉伸
-    horizontalLayout->setStretchFactor(rightArrow, 0);       // 右箭头不拉伸
-
-    layout->addLayout(horizontalLayout);
+    layout->addLayout(contentLayout);
 
     // 设置布局拉伸因子
     layout->setStretchFactor(title, 0);              // 标题不拉伸
-    layout->setStretchFactor(horizontalLayout, 1); // 主要内容区域拉伸
+    layout->setStretchFactor(contentLayout, 1);      // 主要内容区域拉伸
 
     setLayout(layout);
 
@@ -434,6 +483,16 @@ uint16_t SystemSetting::getMqttPort() const
 QString SystemSetting::getDeviceAddr() const
 {
     return m_deviceAddr;
+}
+
+QString SystemSetting::getExportPath() const
+{
+    return m_filePath;
+}
+
+QString SystemSetting::getExportFormat() const
+{
+    return m_fileFormat;
 }
 
 void SystemSetting::onMQTTExamStartMessageReceived(const QString& topic, const QByteArray& payload)

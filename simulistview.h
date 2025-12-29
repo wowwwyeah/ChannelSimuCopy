@@ -3,9 +3,10 @@
 
 #include <QWidget>
 #include <QPushButton>
-#include <QTableWidget>
+#include <QTableView>
 #include <QHeaderView>
 #include <QStandardItemModel>
+#include "channelparaconifg.h"
 
 class SimuListView : public QWidget
 {
@@ -13,6 +14,9 @@ class SimuListView : public QWidget
 public:
     explicit SimuListView(QWidget *parent = nullptr);
     ~SimuListView();
+
+    // 声明用于插入数据的函数
+    void insertScenarioData(const ModelParaSetting &scenarioData);
 
 signals:
 
@@ -27,11 +31,14 @@ private:
     void initUI();
     void setupConnections();
     void updateRowNumbers();
-    QTableWidget *m_tableView;
+    bool exportToMultiFiles(const QList<ModelParaSetting> &dataList, const QString &dirPath, const QString &format);
+    QTableView *m_tableView;
     QPushButton *m_deleteButton;
     QPushButton *m_importButton;
     QPushButton *m_exportButton;
     QPushButton *m_selectAllButton;
+
+    QList<ModelParaSetting> m_dataList;
 };
 
 #endif // SIMULISTVIEW_H

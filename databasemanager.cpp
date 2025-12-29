@@ -52,7 +52,7 @@ bool DatabaseManager::createTable()
     qDebug() << "Table created successfully!";
     return true;
 }
-bool DatabaseManager::insertParaConfig(ModelParaSetting &config)
+bool DatabaseManager::insertParaConfig(const ModelParaSetting &config)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO configs (channelNum, modelName, noisePower, signalAnt, comDistance, multipathNum, filterNum, multiPathType) "

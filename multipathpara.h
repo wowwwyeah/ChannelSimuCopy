@@ -47,8 +47,6 @@ public slots:
     void resetToDefaults();
 
 private slots:
-    void onMultipathCountChanged(int value);
-    void onFilterNumChanged(int value);
     void onPathParameterChanged();
     void onApplyClicked();
     void onResetClicked();
@@ -56,6 +54,7 @@ private slots:
 
 private:
     void setupUI();
+    void initConnections();
     void createMultipathCountGroup();
     void createPathParametersGroup();
     void updatePathParametersTable();
@@ -80,6 +79,16 @@ private:
     // 参数值
     int m_multipathCount;
     int m_filterNum;
+
+    // 新增：多径数量 - 标签+加减按钮
+    QLabel *m_multipathValueLabel;
+    QPushButton *m_multipathAddBtn;
+    QPushButton *m_multipathSubBtn;
+
+    // 新增：滤波器编号 - 标签+加减按钮
+    QLabel *m_filterNumValueLabel;
+    QPushButton *m_filterAddBtn;
+    QPushButton *m_filterSubBtn;
 
     // 参数范围
     const int MULTIPATH_COUNT_MIN = 1;

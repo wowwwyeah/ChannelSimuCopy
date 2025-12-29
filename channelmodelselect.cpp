@@ -163,43 +163,45 @@ void ChannelModelSelect::setupUI()
         QGroupBox {
             color: #CCEEEE;
             font-family: "Microsoft YaHei";
-            font-size: 14px;
+            font-size: 20px;  /* 16px -> 20px */
             font-weight: bold;
-            border: 2px solid #559999;
-            border-radius: 8px;
-            margin-top: 1ex;
-            padding-top: 2px;
+            border: 3px solid #559999;  /* 2px -> 3px */
+            border-radius: 12px;  /* 8px -> 12px */
+            margin-top: 2ex;  /* 1ex -> 2ex */
+            padding-top: 4px;  /* 2px -> 4px */
             background-color: #225555;
         }
 
         QGroupBox::title {
             subcontrol-origin: margin;
             subcontrol-position: top center;
-            padding: 0 8px;
+            padding: 2px 12px;  /* 0 8px -> 2px 12px */
             background-color: #448888;
-            border-radius: 4px;
+            border-radius: 6px;  /* 4px -> 6px */
+            font-size: 18px;  /* 添加字体大小 */
         }
 
         /* 标签样式 */
         QLabel {
             color: #99CCCC;
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 18px;  /* 16px -> 18px */
             font-weight: bold;
+            margin: 4px 0px;  /* 添加边距 */
         }
 
         /* RadioButton样式 */
         QRadioButton {
-            spacing: 2px;
+            spacing: 4px;  /* 2px -> 4px */
             color: #4CAF50;
             font-family: "Microsoft YaHei";
-            font-size: 14px;
+            font-size: 16px;  /* 14px -> 16px */
             font-weight: bold;
             background-color: transparent;
             border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin: 2px 0px;
+            padding: 8px 12px;  /* 6px 10px -> 8px 12px */
+            border-radius: 6px;  /* 4px -> 6px */
+            margin: 4px 0px;  /* 2px 0px -> 4px 0px */
         }
 
         QRadioButton:hover {
@@ -208,30 +210,30 @@ void ChannelModelSelect::setupUI()
         }
 
         QRadioButton::indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-            border: 2px solid #00C6FF;
+            width: 16px;  /* 12px -> 16px */
+            height: 16px;  /* 12px -> 16px */
+            border-radius: 3px;  /* 2px -> 3px */
+            border: 3px solid #00C6FF;  /* 2px -> 3px */
             background-color: #336666;
         }
 
         QRadioButton::indicator:checked {
             background-color: #00C6FF;
-            border: 2px solid #00C6FF;
+            border: 3px solid #00C6FF;  /* 2px -> 3px */
         }
 
         QRadioButton::indicator:unchecked {
             background-color: #336666;
-            border: 2px solid #99CCCC;
+            border: 3px solid #99CCCC;  /* 2px -> 3px */
         }
 
         QRadioButton::indicator:checked:hover {
             background-color: #CCEEEE;
-            border: 2px solid #CCEEEE;
+            border: 3px solid #CCEEEE;  /* 2px -> 3px */
         }
 
         QRadioButton::indicator:unchecked:hover {
-            border: 2px solid #CCEEEE;
+            border: 3px solid #CCEEEE;  /* 2px -> 3px */
         }
 
         /* 按钮样式 */
@@ -239,12 +241,13 @@ void ChannelModelSelect::setupUI()
             background-color: #448888;
             color: #CCEEEE;
             border: none;
-            padding: 2px 4px;
-            border-radius: 2px;
+            padding: 8px 12px;  /* 2px 4px -> 8px 12px */
+            border-radius: 4px;  /* 2px -> 4px */
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 14px;  /* 12px -> 14px */
             font-weight: bold;
-            min-width: 50px;
+            min-width: 60px;  /* 50px -> 60px */
+            min-height: 32px;  /* 添加最小高度 */
         }
 
         QPushButton:hover {
@@ -265,45 +268,45 @@ void ChannelModelSelect::setupUI()
             background-color: #55AA55;
             color: #CCEEEE;
             border: none;
-            border-radius: 25px;
-            min-width: 50px;
-            min-height: 50px;
-            max-width: 50px;
-            max-height: 50px;
+            border-radius: 30px;  /* 25px -> 30px */
+            min-width: 60px;  /* 50px -> 60px */
+            min-height: 60px;  /* 50px -> 60px */
+            max-width: 60px;  /* 50px -> 60px */
+            max-height: 60px;  /* 50px -> 60px */
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 14px;  /* 12px -> 14px */
             font-weight: bold;
-            margin: 5px;
+            margin: 8px;  /* 5px -> 8px */
         }
 
         QPushButton#addButton:hover {
             background-color: #66BB66;
-            border: 3px solid #CCEEEE;
+            border: 4px solid #CCEEEE;  /* 3px -> 4px */
         }
 
         QPushButton#addButton:pressed {
             background-color: #44AA44;
         }
 
-        /* 圆形加号按钮样式 */
+        /* 圆形删除按钮样式 */
         QPushButton#delButton {
             background-color: #FF2400;
             color: #CCEEEE;
             border: none;
-            border-radius: 25px;
-            min-width: 50px;
-            min-height: 50px;
-            max-width: 50px;
-            max-height: 50px;
+            border-radius: 30px;  /* 25px -> 30px */
+            min-width: 60px;  /* 50px -> 60px */
+            min-height: 60px;  /* 50px -> 60px */
+            max-width: 60px;  /* 50px -> 60px */
+            max-height: 60px;  /* 50px -> 60px */
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 14px;  /* 12px -> 14px */
             font-weight: bold;
-            margin: 5px;
+            margin: 8px;  /* 5px -> 8px */
         }
 
         QPushButton#delButton:hover {
             background-color: #FF2400;
-            border: 3px solid #CCEEEE;
+            border: 4px solid #CCEEEE;  /* 3px -> 4px */
         }
 
         QPushButton#delButton:pressed {
@@ -314,40 +317,18 @@ void ChannelModelSelect::setupUI()
             background-color: #225555;
             color: #88AAAA;
         }
+
         /* 工具提示样式 */
         QToolTip {
             background-color: #448888;
             color: #CCEEEE;
-            border: 2px solid #559999;
-            border-radius: 6px;
-            padding: 8px;
+            border: 3px solid #559999;  /* 2px -> 3px */
+            border-radius: 8px;  /* 6px -> 8px */
+            padding: 12px;  /* 8px -> 12px */
             font-family: "Microsoft YaHei";
-            font-size: 12px;
+            font-size: 14px;  /* 12px -> 14px */
         }
     )");
-    // 创建主水平布局来包含箭头和内容
-    QHBoxLayout *outerHorizontalLayout = new QHBoxLayout();
-
-    // 左侧箭头（静态提示）
-    QLabel *leftArrow = new QLabel("◀");
-    leftArrow->setAlignment(Qt::AlignCenter);
-    leftArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    leftArrow->setFixedSize(80, 80);
-    leftArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(leftArrow);
-
-    // 中央内容区域
-    QVBoxLayout *contentLayout = new QVBoxLayout();
 
     // === 主GroupBox ===
     m_mainGroup = new QGroupBox("信道场景设置");
@@ -408,43 +389,13 @@ void ChannelModelSelect::setupUI()
     mainGroupLayout->setStretchFactor(radioWidget, 6);
     mainGroupLayout->setStretchFactor(controlWidget, 1);
 
-    contentLayout->addWidget(m_mainGroup);
+    m_mainLayout->addWidget(m_mainGroup);
+    setLayout(m_mainLayout);
 
     // 创建按钮组
     m_buttonGroup = new QButtonGroup(this);
     m_buttonGroup->setExclusive(true);
 
-    // 将内容布局添加到外层水平布局
-    outerHorizontalLayout->addLayout(contentLayout);
-
-    // 右侧箭头（静态提示）
-    QLabel *rightArrow = new QLabel("▶");
-    rightArrow->setAlignment(Qt::AlignCenter);
-    rightArrow->setStyleSheet(
-        "QLabel {"
-        "   color: rgba(255, 255, 255, 80);"  // 半透明白色
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "   background-color: rgba(255, 255, 255, 20);"
-        "   border-radius: 15px;"
-        "   padding: 5px;"
-        "   margin: 10px;"
-        "}"
-        );
-    rightArrow->setFixedSize(80, 80);
-    rightArrow->setCursor(Qt::ArrowCursor);  // 普通箭头光标，不可点击
-    outerHorizontalLayout->addWidget(rightArrow);
-
-    // 设置外层布局的拉伸因子
-    outerHorizontalLayout->setStretchFactor(leftArrow, 0);        // 左箭头不拉伸
-    outerHorizontalLayout->setStretchFactor(contentLayout, 1);    // 内容区域拉伸
-    outerHorizontalLayout->setStretchFactor(rightArrow, 0);       // 右箭头不拉伸
-
-    m_mainLayout->addLayout(outerHorizontalLayout);
-
-    // 创建按钮组
-    m_buttonGroup = new QButtonGroup(this);
-    m_buttonGroup->setExclusive(true);
 }
 
 void ChannelModelSelect::createRadioButton(const QString &text, const QString &tooltip, bool isProtected)
