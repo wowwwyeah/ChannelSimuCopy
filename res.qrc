@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/image/cancel.png</file>
+        <file>res/image/arrow_left.png</file>
+        <file>res/image/arrow_right.png</file>
+        <file>res/image/circle_plus.png</file>
+        <file>res/image/circle_remove.png</file>
+        <file>res/image/logo.png</file>
+        <file>res/image/arrow_down.png</file>
+        <file>res/image/arrow_up.png</file>
+    </qresource>
+</RCC>
