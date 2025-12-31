@@ -79,7 +79,7 @@ typedef struct {         //写寄存器
 
 /*
     高速ADC，设置高低门限，实现自动增益控制
-    power = round(10^(0.1*dbfs)*len*2^30)
+    power = round(10^(0.1*dbfs)*len*2^23)
         power是输入寄存器的值
         dbfs输入的值
         len：自动增益功率统计长度
@@ -89,18 +89,14 @@ typedef struct {         //写寄存器
 #define REG_ATT_L_GATE_L 0x0028
 #define REG_ATT_L_GATE_H 0x0029
 
-/*
-    通道选择-读取通道功率
-    1bit对应1通道，共4通道
-*/
-#define REG_ATT_RD_CH_SEL 0x002F
 
 /*
     电台功率查询
 */
-#define REG_ATT_POWER_L 0x0041
-#define REG_ATT_POWER_H 0x0042
-
+#define REG_ATT_POWER_1 0x0041
+#define REG_ATT_POWER_2 0x004a
+#define REG_ATT_POWER_3 0x004c
+#define REG_ATT_POWER_4 0x004e
 /*
     低速adc
 */
@@ -181,12 +177,14 @@ const uint32_t LOW_ADC[4] = { 0X44, 0X45, 0X46, 0X47 };
         bit0-bit3：0-9，9种输出来源
 */
 #define REG_DAC_OUT_SEL 0x003c
-
+#define REG_DAC_OUT_SEL2 0x0016
 /*
     DAC输出测试单音
     计算公式：f=REG/2^31*125MHz
 */
 #define REG_DAC_dds 0x003b
+#define REG_DAC_dds2 0x0015
+
 
 /*
     带阻滤波器配置
@@ -656,8 +654,10 @@ int get_ptt_sta_power(struct radios* dt) {
 #endif
     int ret;
     uint32_t ptt_state;
-    uint32_t power_value_l;
-    uint32_t power_value_h;
+    uint32_t power_value_1;
+    uint32_t power_value_2;
+    uint32_t power_value_3;
+    uint32_t power_value_4;
     uint64_t power_value;
     uint64_t reg_power_value;
     uint32_t len;
@@ -666,15 +666,21 @@ int get_ptt_sta_power(struct radios* dt) {
     read_reg(FPGA1, REG_PTT_STATE, &ptt_state);
     dt->radio_sta = ptt_state & 0XF;
     read_reg(FPGA1, REG_ATT_LEN, &len);
-    for (int i = 0; i < 4; i++) {
-        write_reg(FPGA1, REG_ATT_RD_CH_SEL,(0x1<<i));
-        read_reg(FPGA1, REG_ATT_POWER_L, &power_value_l);
-        read_reg(FPGA1, REG_ATT_POWER_H, &power_value_h);
-        power_value = ((uint64_t)power_value_h << 32) | power_value_l;
-        reg_power_value = 10 * log10(power_value / (len * scale)) ;
-        dt->radio_power[i] = reg_power_value;
-    }
+    read_reg(FPGA1, REG_ATT_POWER_1, &power_value_1);
+    reg_power_value = 10 * log10(power_value_1 / (len * scale)) ;
+    dt->radio_power[0] = reg_power_value;
 
+    read_reg(FPGA1, REG_ATT_POWER_2, &power_value_2);
+    reg_power_value = 10 * log10(power_value_2 / (len * scale)) ;
+    dt->radio_power[1] = reg_power_value;
+
+    read_reg(FPGA1, REG_ATT_POWER_3, &power_value_3);
+    reg_power_value = 10 * log10(power_value_3 / (len * scale)) ;
+    dt->radio_power[2] = reg_power_value;
+
+    read_reg(FPGA1, REG_ATT_POWER_4, &power_value_4);
+    reg_power_value = 10 * log10(power_value_4 / (len * scale)) ;
+    dt->radio_power[3] = reg_power_value;
     return FPGA_OK;
 }
 
@@ -751,6 +757,10 @@ int set_ladc_tap(int tap_clk) {
           开关sw：0关、1开
 */
 int set_jt_sw(RS_JT_E rs_jt, bool sw) {
+#ifdef  USE_FPGA_TEST
+    qDebug() << "成功调用set_jt_sw()"<<"rs_jt"<<rs_jt<<"sw"<<sw;
+    return FPGA_OK;
+#endif
     uint32_t current_sw_value;
 
     if (rs_jt >= RS_JT_MAX) {
@@ -777,6 +787,10 @@ int set_jt_sw(RS_JT_E rs_jt, bool sw) {
               衰减值att:0.0-31.5
 */
 int set_jt_att_value(RS_JT_E rs_jt, float att) {
+#ifdef  USE_FPGA_TEST
+    qDebug() << "成功调用set_jt_att_value()"<<"rs_jt"<<rs_jt<<"att"<<att;
+    return FPGA_OK;
+#endif
     int ret;
     float att2;
     uint32_t jt_att_value;
@@ -1163,14 +1177,7 @@ int set_chl_delay(RS_OUT_E rs_out, ALG_PATH_E path, int delay) {
 
 //频扩，输入频率值
 int set_dpl_df(RS_OUT_E rs_out, ALG_PATH_E path, float freq) {
-#ifdef  USE_FPGA_TEST
-    qDebug() << "成功调用set_dpl_df()"<<"rs_out"<<rs_out<<"path"<<path<<"freq"<<freq;
-    return FPGA_OK;
-#endif
     // 参数有效性检查
-    if (path == 0) {
-        return FPGA_OK;
-    }
 
     if (rs_out >= RS_OUT_MAX) {
         SO_DEBUG("invalid chl:%d", rs_out);
@@ -1408,6 +1415,10 @@ int set_bypass_dpl_iq(RS_OUT_E rs_out, ALG_PATH_E path_id, int dfs_sw, int fd_sw
 
 */
 int set_gr_sw(GR_OUT_E gr_out, bool sw) {
+#ifdef  USE_FPGA_TEST
+    qDebug() << "成功调用set_gr_sw()"<<"gr_out"<<gr_out<<"sw"<<sw;
+    return FPGA_OK;
+#endif  
     uint32_t current_sw_value;
 
     read_reg(FPGA2, REG_GR_ATT_TX_EN, &current_sw_value);
@@ -1425,6 +1436,10 @@ int set_gr_sw(GR_OUT_E gr_out, bool sw) {
     输入：DA的1-5通道，衰减值(写入衰减的浮点值)0-61
 */
 int set_gr_att(GR_OUT_E gr_out, float att) {
+#ifdef  USE_FPGA_TEST
+    qDebug() << "成功调用set_gr_att()"<<"gr_out"<<gr_out<<"att"<<att;
+    return FPGA_OK;
+#endif  
     int ret;
     float att2;
     uint32_t gr_att_value;
@@ -1475,6 +1490,364 @@ int set_gr_att(GR_OUT_E gr_out, float att) {
     return FPGA_OK;
 }
 
+int set_dds_2(float freq) {
+    double dds;
+    double rounded_dds;
+    uint32_t reg_dds;
+    const double  max_freq = 125000000;      // 125000000 Hz
+    const double  scale = (1ULL << 31);  // 2^31
+    dds = (double)freq * scale / max_freq;
+    rounded_dds = round(dds);
+    reg_dds = (uint32_t)(int32_t)rounded_dds;
+
+    write_reg(FPGA2, REG_DAC_dds2, reg_dds);
+    SO_DEBUG("freq:%f, rounded_dds:%lf, reg_dds:%u", freq, rounded_dds, reg_dds);
+    return FPGA_OK;
+}
+
+
+/*
+DAC输出来源:dac_n为0-5，  channel_sel表示DAC输出来源取值为0-9
+*/
+
+int set_gr_out_sel(GR_OUT_E gr_in, DATA_SRC src_sel) {
+    int ret;
+    uint32_t old_value;
+    uint32_t new_value;
+
+    read_reg(FPGA2, REG_DAC_OUT_SEL2, &old_value);
+    switch (src_sel)
+    {
+    case DATA_SRC_NONE:
+        new_value = old_value & ~(0xFU << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC1_ALG:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (1 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC2_ALG:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (2 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC3_ALG:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (3 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC4_ALG:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (4 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC1:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (5 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC2:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (6 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC3:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (7 << (4 * gr_in));
+        break;
+    case DATA_SRC_ADC4:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (8 << (4 * gr_in));
+        break;
+    case DATA_SRC_SINE:
+        new_value = (old_value & ~(0xFU << (4 * gr_in))) | (9 << (4 * gr_in));
+        break;
+
+    default: new_value = old_value & ~(0xFU << (4 * gr_in));
+        break;
+    }
+
+    write_reg(FPGA2, REG_DAC_OUT_SEL2, new_value);
+    return FPGA_OK;
+}
+
+
+int set_axis_2(GR_OUT_E gr_in, struct bs_axis* bs_axis_value){
+    int ret;
+
+    if (gr_in >= GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    write_reg(FPGA2, REG_AXIS_RELOAD1_START[gr_in], 0x0);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_START[gr_in], 0x1);
+
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[0]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[1]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[2]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[3]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[4]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[5]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[6]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[7]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[8]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[9]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[10]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[11]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[12]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[13]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[14]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[15]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[16]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[17]);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_DATA[gr_in], (uint32_t)bs_axis_value->coeff[18]);
+
+    write_reg(FPGA2, REG_AXIS_RELOAD1_END[gr_in], 0x0);
+    write_reg(FPGA2, REG_AXIS_RELOAD1_END[gr_in], 0x1);
+    return FPGA_OK;
+}
+
+//路径延时,单位ns
+// channel_id 0-3
+// path_id 0-4
+int set_chl_delay_2(GR_OUT_E gr_in, ALG_PATH_E path, int delay) {
+    int ret;
+    int delay_clk = delay / 8;
+
+    if (gr_in >= GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    if (path > ALG_PATH_MAX) {
+        SO_DEBUG("invalid path:%d", path);
+        return FPGA_ERR_INVALID_PATH;
+    }
+
+    if (path == 0) {
+        return FPGA_OK;
+    }
+
+    if (delay_clk > 8192) {
+        delay_clk = 8192;
+        SO_DEBUG("set_chl_delay delay overflow");
+    }
+    write_reg(FPGA2, REG_DELAY[gr_in][path], delay_clk);
+    return FPGA_OK;
+}
+
+
+//频扩，输入频率值
+int set_dpl_df_2(GR_OUT_E gr_in, ALG_PATH_E path, float freq) {
+    // 参数有效性检查
+
+    if (gr_in >= GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    if (path >= ALG_PATH_MAX) {
+        SO_DEBUG("invalid path:%d", path);
+        return FPGA_ERR_INVALID_PATH;
+    }
+
+    const double  max_freq = 125000000;      // 125000000 Hz
+    const double  scale = (1ULL << 31);  // 2^31
+    float freq_value;
+    double dpl_fd_i;
+    double dpl_fd_q;
+    double rounded_dpl_fd;
+    double rounded_dpl_fdq;
+    uint32_t reg_dpl_fd;
+    uint32_t reg_dpl_fdq;
+    float df_i[7];
+    float df_q[8];
+    int a = 0;
+    int b = 0;  // 初始化 a 和 b 为 0
+    freq_value = freq / 2;
+    for (int i = 1; i <= 15; i++) {
+
+        if (i % 2 == 0) {
+            df_i[a] = (freq_value / 15) * i;
+
+            dpl_fd_i = (double)df_i[a] * scale / max_freq;
+            rounded_dpl_fd = round(dpl_fd_i);
+            reg_dpl_fd = (uint32_t)(int32_t)rounded_dpl_fd;  //即使 reg_rounded 为负，也会正确转换为 uint32_t 的补码形式
+
+            write_reg(FPGA2, REG_DPL_FDI[gr_in][path][a], reg_dpl_fd);
+            a++;
+        }
+        else {
+            df_q[b] = (freq_value / 15) * i;
+
+            dpl_fd_q = (double)df_q[b] * scale / max_freq;
+            rounded_dpl_fdq = round(dpl_fd_q);
+            reg_dpl_fdq = (uint32_t)(int32_t)rounded_dpl_fdq;  //即使 reg_rounded 为负，也会正确转换为 uint32_t 的补码形式
+            write_reg(FPGA2, REG_DPL_FDQ[gr_in][path][b], reg_dpl_fdq);
+            b++;
+        }
+    }
+    return FPGA_OK;
+}
+
+
+//多普勒频移
+int set_dpl_dfs_2(GR_OUT_E gr_in, ALG_PATH_E path, float freq) {
+    int ret;
+    uint32_t chl_freq;
+    uint32_t dfs_init;
+    uint32_t real_freq;
+    const double  max_freq = 125000000;      // 125 MHz
+    const double   scale = (1ULL << 31);  // 2^31
+    double abs_freq = abs(freq);
+    double dpl_dfs = (double)abs_freq * scale / max_freq;
+    double rounded_dpl_dfs = round(dpl_dfs);
+    // 3. 转为 32 位无符号整数（保留补码语义）
+    // 即使 reg_rounded 为负，也会正确转换为 uint32_t 的补码形式
+    uint32_t reg_dpl_dfs = (uint32_t)(int32_t)rounded_dpl_dfs;
+
+    if (gr_in >= GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    if (path >= ALG_PATH_MAX) {
+        SO_DEBUG("invalid path:%d", path);
+        return FPGA_ERR_INVALID_PATH;
+    }
+
+    read_reg(FPGA2, REG_CHNL_FREQ[gr_in], &chl_freq);
+    dfs_init = 0x0 - chl_freq;
+    if (freq >= 0) {
+        real_freq = dfs_init + reg_dpl_dfs;
+    }
+    else {
+        real_freq = dfs_init - reg_dpl_dfs;
+
+    }
+
+    write_reg(FPGA2, REG_DPL_DFS[gr_in][path], real_freq);
+    SO_DEBUG("freq:%f, real_freq:%u", freq, real_freq);
+    return FPGA_OK;
+}
+
+
+//增益
+int set_gain_2(GR_OUT_E gr_in, ALG_PATH_E path, float gain) {
+    int ret;
+    unsigned int reg_gain = pow(10, (gain / 10)) * 4096;
+
+    if (gr_in > GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    if (path > ALG_PATH_MAX) {
+        SO_DEBUG("invalid path:%d", path);
+        return FPGA_ERR_INVALID_PATH;
+    }
+
+    write_reg(FPGA2, REG_gain[gr_in][path], reg_gain);
+    return FPGA_OK;
+
+}
+
+/************************旁路开关控制*************************************/
+/*
+    先读再写
+    参数：channel_id通道、r_axis带阻滤波
+    0开，1关
+*/
+int set_bypass_raxis_2(GR_OUT_E gr_in, int r_axis_sw) {
+    int ret;
+    uint32_t old_value;
+    uint32_t new_value;
+
+    if (gr_in > GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    read_reg(FPGA2, REG_DPL_BYPASS[gr_in], &old_value);
+
+    if (r_axis_sw == 1) {
+        new_value = old_value | (1U << 12);
+    }
+    else {
+        new_value = old_value & ~(1U << 12);
+    }
+    write_reg(FPGA2, REG_DPL_BYPASS[gr_in], new_value);
+
+    return FPGA_OK;
+
+}
+/*
+    先读再写
+    参数：channel_id通道、iq_depart：iq分离
+    0开，1关
+*/
+int set_bypass_iq_2(GR_OUT_E gr_in, int iq_depart_sw) {
+    int ret;
+    uint32_t old_value;
+    uint32_t new_value;
+
+    if (gr_in > GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    read_reg(FPGA2, REG_DPL_BYPASS[gr_in], &old_value);
+
+    if (iq_depart_sw == 1) {
+        new_value = old_value | (1U << 0);
+    }
+    else {
+        new_value = old_value & ~(1U << 0);
+    }
+    write_reg(FPGA2, REG_DPL_BYPASS[gr_in], new_value);
+
+    return FPGA_OK;
+
+}
+/*
+    先读再写
+    参数：gr_in通道、l_axis低通滤波
+    0开，1关
+*/
+
+int set_bypass_laxis_2(GR_OUT_E gr_in, int l_axis_sw) {
+    int ret;
+    uint32_t old_value;
+    uint32_t new_value;
+
+    if (gr_in > GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    read_reg(FPGA2, REG_DPL_BYPASS[gr_in], &old_value);
+
+    if (l_axis_sw == 1) {
+        new_value = old_value | (1U << 1);
+    }
+    else {
+        new_value = old_value & ~(1U << 1);
+    }
+    write_reg(FPGA2, REG_DPL_BYPASS[gr_in], new_value);
+    return FPGA_OK;
+
+}
+/*
+    旁路开关控制,.先读再写
+    参数：gr_in 通道、path_id路径、dfs频移、fd_sw频扩、
+    */
+int set_bypass_dpl_iq_2(GR_OUT_E gr_in, ALG_PATH_E path_id, int dfs_sw, int fd_sw) {
+    int ret;
+    uint32_t old_value;
+    uint32_t new_value;
+
+    if (gr_in > GR_OUT_MAX) {
+        SO_DEBUG("invalid chl:%d", gr_in);
+        return FPGA_ERR_INVALID_CHL;
+    }
+
+    read_reg(FPGA2, REG_DPL_BYPASS[gr_in], &old_value);
+
+    uint32_t new_bits = (dfs_sw << 1) | fd_sw;  // 自动组合成 00, 01, 10, 11
+    int shift = path_id * 2;
+    uint32_t mask = ~(0x03U << shift);
+    new_value = (old_value & mask) | (new_bits << shift);
+    write_reg(FPGA2, REG_DPL_BYPASS[gr_in], new_value);
+    return FPGA_OK;
+}
+
 
 /**************************************初始化*********************************************************************/
 
@@ -1489,6 +1862,8 @@ int fpga_init() {
         return -1;
     }
 
+
+
     for (int rs_in = RS_IN_1; rs_in < RS_IN_MAX; rs_in++) {
         //开关模式设置为自动
         ret = set_rx_sw_mode((RS_IN_E)rs_in, 1);
@@ -1496,26 +1871,15 @@ int fpga_init() {
             return ret;
         }
 
-        //设置ptt门限
+
 
         //设置自动增益控制门限（高门限和低门限）
 
         //通道数据源初始化为空
         set_chl_out_sel((RS_OUT_E)rs_in, DATA_SRC_NONE);
 
-        //
-        // ret = set_rx_sw((RS_IN_E)rs_in, 1);
-        // if (ret != FPGA_OK) {
-        //     return ret;
-        // }
-
         set_rx_att_auto((RS_IN_E)rs_in, true);
 
-        //设置输入增益为0，并关闭自动增益控制
-        // ret = set_rx_att_value((RS_IN_E)rs_in, 0.0);
-        // if (ret != FPGA_OK) {
-        //     return ret;
-        // }
     }
 
     for (int rs_jt = RS_JT_1; rs_jt < RS_JT_MAX; rs_jt++) {
@@ -1538,7 +1902,7 @@ int fpga_init() {
             return ret;
         }
 
-        ret = set_chl_sw4((RS_OUT_E)rs_out, rs_out);
+        ret = set_chl_sw4((RS_OUT_E)rs_out, (rs_out+1));
         if (ret != FPGA_OK) {
             return ret;
         }
@@ -1548,23 +1912,6 @@ int fpga_init() {
             return ret;
         }
 
-        // for (int path = ALG_PATH_1; path < ALG_PATH_MAX; path++) {
-        //     ret = set_dpl_dfs((RS_OUT_E)rs_out, (ALG_PATH_E)path, 0.0);
-        //     if (ret != FPGA_OK) {
-        //         return ret;
-        //     }
-
-        //     ret = set_dpl_df((RS_OUT_E)rs_out, (ALG_PATH_E)path, 0.0);
-        //     if (ret != FPGA_OK) {
-        //         return ret;
-        //     }
-
-        //     ret = set_bypass_dpl_iq((RS_OUT_E)rs_out, (ALG_PATH_E)path, 1, 1);
-        //     if (ret != FPGA_OK) {
-        //         return ret;
-        //     }
-        //     usleep(10000);
-        // }
 
         ret = set_bypass_raxis((RS_OUT_E)rs_out, 1);
         if (ret != FPGA_OK) {
@@ -1593,9 +1940,12 @@ int fpga_init() {
             return ret;
         }
     }
-
-    ret = set_ptt_gate(700);
+    //设置ptt门限和fpga读取adc时间
+    ret = set_ptt_gate(350);
     ret = set_ladc_tap(2000);
+
+
+
     return FPGA_OK;
 }
 
@@ -1616,8 +1966,8 @@ void help(char* p) {
     SO_DEBUG("[help] set_rx_att_auto [rs_in] [enable]");
     SO_DEBUG("[help] set_rx_att_value [rs_in] [att]");
     SO_DEBUG("[help] set_att_len [len]");
-    SO_DEBUG("[help] set_att_h_gata [dbfs]");
-    SO_DEBUG("[help] set_att_l_gata [dbfs]");
+    SO_DEBUG("[help] set_att_h_gate [dbfs]");
+    SO_DEBUG("[help] set_att_l_gate [dbfs]");
     SO_DEBUG("[help] get_low_adc");
     SO_DEBUG("[help] get_ptt_sta_power ");
     SO_DEBUG("[help] get_rx_att [rs_in]");
@@ -1640,6 +1990,20 @@ void help(char* p) {
     SO_DEBUG("[help] set_bypass_iq [rs_out] [iq_depart_sw]");
     SO_DEBUG("[help] set_bypass_laxis [rs_out] [l_axis_sw]");
     SO_DEBUG("[help] set_bypass_dpl_iq [rs_out] [path] [dfs_sw] [fd_sw]");
+    SO_DEBUG("[help] set_gr_sw [gr_out] [sw]");
+    SO_DEBUG("[help] set_gr_att [gr_out] [att]");
+    SO_DEBUG("[help] set_gr_out_sel [rs_jt] [src_sel]");
+    SO_DEBUG("[help] set_dds_2 [freq]");
+    SO_DEBUG("[help] set_axis_2 [rs_out]");
+    SO_DEBUG("[help] set_chl_delay_2 [rs_out] [path] [delay]");
+    SO_DEBUG("[help] set_dpl_df_2 [rs_out] [path] [freq]");
+    SO_DEBUG("[help] set_dpl_dfs_2 [rs_out] [path] [freq]");
+    SO_DEBUG("[help] set_gain_2 [rs_out] [path] [gain]");
+    SO_DEBUG("[help] set_bypass_raxis_2 [rs_out] [r_axis_sw]");
+    SO_DEBUG("[help] set_bypass_iq_2 [rs_out] [iq_depart_sw]");
+    SO_DEBUG("[help] set_bypass_laxis_2 [rs_out] [l_axis_sw]");
+    SO_DEBUG("[help] set_bypass_dpl_iq_2 [rs_out] [path] [dfs_sw] [fd_sw]");
+    SO_DEBUG("[help] fpga_init");
 }
 
 // #define _TEST_
@@ -1746,7 +2110,7 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(cmd, "set_att_l_gate") == 0 && argc == 3) {
         fv1 = atof(argv[2]);
         set_att_l_gate(fv1);
-        printf("set_att_l_gata" );
+        printf("set_att_l_gate" );
     } else if (strcmp(cmd, "get_low_adc") == 0 && argc == 2) {
         get_low_adc(&lowadc);
         printf("get_low_adc\r\n");
@@ -1854,10 +2218,80 @@ int main(int argc, char *argv[]) {
         iv4 = atoi(argv[5]);
         set_bypass_dpl_iq((RS_OUT_E)iv1, iv2, iv3, iv4);
         printf("set_bypass chnl:%d path:%d dfs_sw:%d fd_sw:%d\r\n", iv1, iv2, iv3,iv4);
-    } else if (strcmp(cmd, "fpga_init") == 0 && argc == 2) {
+    }else if (strcmp(cmd, "set_gr_sw") == 0 && argc == 4) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        set_gr_sw(iv1, iv2);
+        printf("set_gr_sw");
+    } else if (strcmp(cmd, "set_gr_att") == 0 && argc == 4) {
+        iv1 = (int32_t)atoi(argv[2]);
+        fv2 = atof(argv[3]);
+        set_gr_att(iv1, fv2);
+        printf("set_gr_att");
+    } else if (strcmp(cmd, "set_gr_out_sel") == 0 && argc == 4) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        set_gr_out_sel((RS_OUT_E)iv1, (DATA_SRC)iv2);
+        printf("set_gr_out_sel DAC:%d SEL:%d\r\n", iv1, iv2);
+    } else if (strcmp(cmd, "set_dds_2") == 0 && argc == 3) {
+        fv1 = atof(argv[2]);
+        set_dds_2(fv1);
+        printf("set_dds_2 freq:%f\r\n", fv1);
+    } else if (strcmp(cmd, "set_axis_2") == 0 && argc == 3) {
+        iv1 = atoi(argv[2]);
+        set_axis_2((RS_OUT_E)iv1, &cfg);
+        printf("set_axis_2 success");
+    } else if (strcmp(cmd, "set_chl_delay_2") == 0 && argc == 5) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        iv3 = atoi(argv[4]);
+        set_chl_delay_2((RS_OUT_E)iv1, (ALG_PATH_E)iv2, iv3);
+        printf("set_chl_delay_2 chl:%d path:%d delay:%d\r\n", iv1, iv2, iv3);
+    } else if (strcmp(cmd, "set_dpl_df_2") == 0 && argc == 5) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        fv2 = atof(argv[4]);
+        set_dpl_df_2((RS_OUT_E)iv1, (ALG_PATH_E)iv2, fv2);
+        printf("set_dpl_df_2 chl:%d path:%d freq:%f\r\n", iv1, iv2, fv3);
+    } else if (strcmp(cmd, "set_dpl_dfs_2") == 0 && argc == 5) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        fv2 = atof(argv[4]);
+        set_dpl_dfs_2((RS_OUT_E)iv1, (ALG_PATH_E)iv2, fv2);
+        printf("set_dpl_dfs_2 chl:%d path:%d freq:%f\r\n", iv1, iv2, fv3);
+    } else if (strcmp(cmd, "set_gain_2") == 0 && argc == 5) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        fv2 = atof(argv[4]);
+        set_gain_2((RS_OUT_E)iv1, (ALG_PATH_E)iv2, fv2);
+        printf("set_gain_2 chl:%d path:%d gain:%f\r\n", iv1, iv2, fv3);
+    } else if (strcmp(cmd, "set_bypass_raxis_2") == 0 && argc == 4) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        set_bypass_raxis_2((RS_OUT_E)iv1, iv2);
+        printf("set_bypass_raxis_2 chl:%d sw:%d\r\n", iv1, iv2);
+    } else if (strcmp(cmd, "set_bypass_iq_2") == 0 && argc == 4) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        set_bypass_iq_2((RS_OUT_E)iv1, iv2);
+        printf("set_bypass_iq_2 chl:%d sw:%d\r\n", iv1, iv2);
+    } else if (strcmp(cmd, "set_bypass_laxis_2") == 0 && argc == 4) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        set_bypass_laxis_2((RS_OUT_E)iv1, iv2);
+        printf("set_bypass_laxis_2 chl:%d sw:%d\r\n", iv1, iv2);
+    } else if (strcmp(cmd, "set_bypass_dpl_iq_2") == 0 && argc == 6) {
+        iv1 = atoi(argv[2]);
+        iv2 = atoi(argv[3]);
+        iv3 = atoi(argv[4]);
+        iv4 = atoi(argv[5]);
+        set_bypass_dpl_iq_2((RS_OUT_E)iv1, iv2, iv3, iv4);
+        printf("set_bypass_dpl_iq_2 chnl:%d path:%d dfs_sw:%d fd_sw:%d\r\n", iv1, iv2, iv3,iv4);
+    }else if (strcmp(cmd, "fpga_init") == 0 && argc == 2) {
         fpga_init();
         printf("fpga_init\r\n");
-    } else {
+    }
+    else {
         fprintf(stderr, "Unknown command: %s\n", cmd);
         help(argv[0]);
         close_device();

@@ -1,8 +1,7 @@
 #ifndef FPGA_DRIVER_H
 #define FPGA_DRIVER_H
-
 // fpga_driver.h - FPGA驱动头文件
-// 日期：2025/12/30 18:13
+// 日期：2025/12/31 19:23
 // C++兼容性声明
 
 #include <stdint.h>
@@ -169,6 +168,18 @@ int set_bypass_dpl_iq(RS_OUT_E rs_out, ALG_PATH_E path, int dfs_sw, int fd_sw);
 //干扰
 int set_gr_sw(GR_OUT_E gr_out, bool sw);
 int set_gr_att(GR_OUT_E gr_out, float att);
+int set_dds_2(float freq);
+int set_gr_out_sel(GR_OUT_E gr_in, DATA_SRC src_sel);
+int set_axis_2(GR_OUT_E gr_in, struct bs_axis *bs_axis_value);
+int set_chl_delay_2(GR_OUT_E gr_in, ALG_PATH_E path, int delay);
+int set_dpl_df_2(GR_OUT_E gr_in, ALG_PATH_E path, float freq);
+int set_dpl_dfs_2(GR_OUT_E gr_in, ALG_PATH_E path, float freq);
+int set_gain_2(GR_OUT_E gr_in, ALG_PATH_E path, float gain);
+int set_bypass_raxis_2(GR_OUT_E gr_in, int r_axis_sw);
+int set_bypass_iq_2(GR_OUT_E gr_in, int iq_depart_sw);
+int set_bypass_laxis_2(GR_OUT_E gr_in, int l_axis_sw);
+int set_bypass_dpl_iq_2(GR_OUT_E gr_in, ALG_PATH_E path_id, int dfs_sw, int fd_sw);
+
 
 //初始化
 int fpga_init();
@@ -178,7 +189,4 @@ int fpga_deinit();
 #ifdef __cplusplus
 }
 #endif
-
-
-
 #endif

@@ -3,6 +3,8 @@
 #include <QDebug>
 #include "fpga_driver.h"
 #include "channel_utils.h"
+#include "channelparaconifg.h"
+#include "configmanager.h"
 // 静态查找表定义
 const INT8 RadioChannelManager::ptt2chls[0x10][4] = {
     {0,  0,  0,  0},  // ptt=0
@@ -185,6 +187,23 @@ void RadioChannelManager::processPttChange(UINT8 newPtt)
 
     // 更新旧PTT值
     ptt_val_old = ptt_val_current;
+
+    // 同步更新电台状态到globalStatusMap
+    for (int radioIdx = 1; radioIdx <= 4; radioIdx++) {
+        // 检查当前电台的PTT位是否被设置
+        bool isTransmit = (ptt_val_current & (1 << (radioIdx - 1))) != 0;
+
+        // 创建RadioStatus对象
+        RadioStatus status;
+        status.radioState = isTransmit ? RADIO_TRANSMIT : RADIO_RECEIVE;
+
+        // 更新globalStatusMap
+        QMutexLocker locker(&globalMutex);
+        globalStatusMap[radioIdx] = status;
+
+        // 输出调试信息
+        qDebug() << "电台" << radioIdx << "状态更新为:" << (isTransmit ? "发送" : "接收");
+    }
 }
 
 

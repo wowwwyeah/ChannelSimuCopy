@@ -44,7 +44,7 @@ void PttMonitorThread::run()
         bool semaphoreAcquired = m_semaphore.tryAcquire(1, 10000);
 #else
         // 等待信号量，超时时间为1ms,线程会定期唤醒检查PTT值，也会在信号量被释放时立即唤醒
-        bool semaphoreAcquired = m_semaphore.tryAcquire(1, 100);
+        bool semaphoreAcquired = m_semaphore.tryAcquire(1, 10000);
 #endif
         // 如果停止标志已设置，退出循环
         if (m_stopFlag.loadRelaxed()) {

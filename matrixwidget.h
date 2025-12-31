@@ -63,6 +63,11 @@ private:
     void removeCellWidget(int row, int column);
     //下发信道开关至硬件
     void setChlSwitchToHw(int chl,bool flag);
+    
+    // 控制侦察设备的开关状态
+    int setReconSw(int chl, bool flag);
+    // 控制干扰器的开关状态
+    int setJammerSw(int chl, bool flag);
 
     QTimer *m_longPressTimer;
 

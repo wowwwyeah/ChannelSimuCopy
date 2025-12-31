@@ -90,11 +90,57 @@ void SimuListView::initUI()
     m_exportButton = new QPushButton("导出", this);
     m_selectAllButton = new QPushButton("全选", this);
 
+    // 设置按钮样式和大小
+    QList<QPushButton*> buttons = {m_importButton, m_exportButton, m_selectAllButton}; // 排除删除按钮
+    foreach (QPushButton* btn, buttons) {
+        btn->setStyleSheet("QPushButton {" \
+                           "    background-color: #F5F5F5;" \
+                           "    color: #333333;" \
+                           "    font-size: 12px;" \
+                           "    border-radius: 10px;" \
+                           "    padding: 4px 6px;" \
+                           "    border: 1px solid #CCCCCC;" \
+                           "}" \
+                           "QPushButton:hover {" \
+                           "    background-color: #E0E0E0;" \
+                           "}" \
+                           "QPushButton:disabled {" \
+                           "    background-color: #225555;" \
+                           "    color: 88AAAA;" \
+                           "}");
+        // 设置按钮高度固定为50，宽度自适应
+        btn->setFixedHeight(50);
+        btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    }
+
+    // 设置删除按钮样式为红色
+    m_deleteButton->setStyleSheet("QPushButton {" \
+                                  "    background-color: #8B2323;" \
+                                  "    color: white;" \
+                                  "    font-size: 12px;" \
+                                  "    border-radius: 10px;" \
+                                  "    padding: 4px 6px;" \
+                                  "}" \
+                                  "QPushButton:hover {" \
+                                  "    background-color: #B22222;" \
+                                  "}" \
+                                  "QPushButton:disabled {" \
+                                  "    background-color: #225555;" \
+                                  "    color: 88AAAA;" \
+                                  "}");
+    // 设置删除按钮的大小策略
+    m_deleteButton->setFixedHeight(50);
+    m_deleteButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+
     tableContainerLayout->addWidget(m_tableView);
-    buttonContainerLayout->addWidget(m_deleteButton);
+    // 设置按钮间距为6
+    buttonContainerLayout->setSpacing(6);
+    // 调整按钮顺序：全选在左，删除在右
+    buttonContainerLayout->addWidget(m_selectAllButton);
     buttonContainerLayout->addWidget(m_importButton);
     buttonContainerLayout->addWidget(m_exportButton);
-    buttonContainerLayout->addWidget(m_selectAllButton);
+    buttonContainerLayout->addWidget(m_deleteButton);
 
     contentLayout->addWidget(tableContainer, 1);
     contentLayout->addWidget(buttonContainer);

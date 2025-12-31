@@ -11,7 +11,7 @@
 #include <QToolBar>
 #include <QStatusBar>
 #include <QApplication>
-
+#include "channel_utils.h"
 SubWindow::SubWindow(QWidget *parent)
     : QMainWindow{parent}
 {
@@ -378,12 +378,12 @@ void SubWindow::startChannelSimu()
         globalParaMap[config.modelName] = config;
     }
     qDebug()<<"下发配置,信道号"<<config.channelNum;
-    if(config.channelNum<=6){//DAC动态分配信道
+    if(IS_VALID_DYNAMIC_CHANNEL(config.channelNum)){//DAC动态分配信道
         emit configUpdated(config.modelName,config);
-    }else if(config.channelNum>6&&config.channelNum<=10){//侦察设备
-        setScoutCfg(config.channelNum,config);
-    }else if(config.channelNum>10&&config.channelNum<=15){//干扰器
-        setCountermeasurerCfg(config.channelNum,config);
+    }else if(IS_VALID_RECON_CHANNEL(config.channelNum)){//侦察设备
+        setJtCfg(config.channelNum,config);
+    }else if(IS_VALID_JAMMER(config.channelNum)){//干扰器
+        setGrCfg(config.channelNum,config);
     }
 
     m_mainWindow->setChannelPara(config);
@@ -391,14 +391,23 @@ void SubWindow::startChannelSimu()
 }
 
 //配置侦察设备信道参数
-void SubWindow::setScoutCfg(int chl,const ModelParaSetting& config){
+void SubWindow::setJtCfg(int chl,const ModelParaSetting& config){
     //衰减器
-
+    // 将侦察设备信道编号(7-10)转换为RS_JT_E索引(0-3)
+    int jtIndex = chl - 7;
+    int ret=set_jt_att_value((static_cast<RS_JT_E>(jtIndex)),config.signalAnt); 
+    if(ret!=FPGA_OK){
+        qDebug()<< "Failed to set_jt_att_value" << "chl:"<<chl;
+    }
 }
 //配置干扰器信道参数
-void SubWindow::setCountermeasurerCfg(int chl,const ModelParaSetting& config){
-    //衰减器
-
+void SubWindow::setGrCfg(int chl,const ModelParaSetting& config){
+     // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
+    int grIndex = chl - 11;
+    int ret=set_gr_att((static_cast<GR_OUT_E>(grIndex)),config.signalAnt); 
+    if(ret!=FPGA_OK){
+        qDebug()<< "Failed to set_gr_att" << "chl:"<<chl;
+    }
 }
 
 QString SubWindow::getStatusStyle(const QString &status)

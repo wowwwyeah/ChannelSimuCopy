@@ -483,6 +483,7 @@ void MainWindow::setChannelPara(const ModelParaSetting &config)
 {
     m_configManager->addConfigToMap(config.modelName, config);
     m_dbManager->insertParaConfig(config);
+    m_simuListView->insertScenarioData(config);
     m_channelParaConfig->setChannelConfig(config);
 }
 

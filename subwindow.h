@@ -39,9 +39,9 @@ private:
     void initWindowSize();
     void createPages();
     //配置侦察设备信道参数
-    void setScoutCfg(int chl,const ModelParaSetting& config);
+    void setJtCfg(int chl,const ModelParaSetting& config);
     //配置干扰器信道参数
-    void setCountermeasurerCfg(int chl,const ModelParaSetting& config);
+    void setGrCfg(int chl,const ModelParaSetting& config);
     // 获取电台状态样式
     QString getStatusStyle(const QString &status);
 

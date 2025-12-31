@@ -22,8 +22,8 @@
 // 判断干扰器编号是否在有效范围 [11, 15]
 #define IS_VALID_JAMMER(jammer_num) ((jammer_num) >= 11 && (jammer_num) <= 15)
 
-// 判断算法PATH ID是否在有效范围 [0, 5)
-#define IS_VALID_PATH(path_num) ((path_num) >= ALG_PATH_1 && (path_num) <= ALG_PATH_MAX)
+// 判断算法PATH ID是否在有效范围 [0, 4]
+#define IS_VALID_PATH(path_num) ((path_num) >= ALG_PATH_1 && (path_num) <= 4)
 
 // 判断信道编号是否在有效范围 [-6, 15]
 #define IS_VALID_CHANNEL(channel) ((channel) >= -6 && (channel) <= 15)

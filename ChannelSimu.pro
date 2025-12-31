@@ -5,21 +5,21 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-# #ARM交叉编译配置 MQTT
-# QT += mqtt
+#ARM交叉编译配置 MQTT
+QT += mqtt
 
 # # GCC构建配置 - 手动链接MQTT
-QT_INSTALL_DIR = /home/dlj/Qt/5.15.2
-QT_QMAKE_DIR = $$QT_INSTALL_DIR/gcc_64/bin/
-INCLUDEPATH += $$QT_INSTALL_DIR/gcc_64/include/QtMqtt
-LIBS += -L$$QT_INSTALL_DIR/gcc_64/lib -lQt5Mqtt
+# QT_INSTALL_DIR = /home/dlj/Qt/5.15.2
+# QT_QMAKE_DIR = $$QT_INSTALL_DIR/gcc_64/bin/
+# INCLUDEPATH += $$QT_INSTALL_DIR/gcc_64/include/QtMqtt
+# LIBS += -L$$QT_INSTALL_DIR/gcc_64/lib -lQt5Mqtt
 
 
 #定义USE_TOUCH_EVENT宏以支持触摸事件
-# DEFINES += USE_TOUCH_EVENT
+DEFINES += USE_TOUCH_EVENT
 
 # 定义USE_FPGA_TEST宏以支持FPGA测试功能
-DEFINES += USE_FPGA_TEST
+# DEFINES += USE_FPGA_TEST
 
 SOURCES += \
     PttMonitorThread.cpp \

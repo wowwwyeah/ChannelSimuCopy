@@ -216,19 +216,40 @@ void MatrixWidget::handleTouchLongPress(int row, int column)
         qDebug() << "信道编号: channel=" << channelNum << ", switchFlag=" << switchFlag;
     }
 }
-void MatrixWidget::setChlSwitchToHw(int chl,bool flag){
-    if(IS_VALID_DYNAMIC_CHANNEL(chl)){//DAC动态分配信道
+// 控制侦察设备的开关状态
+int MatrixWidget::setReconSw(int chl, bool flag) {
+    // 将侦察设备信道编号(7-10)转换为RS_JT_E索引(0-3)
+    int jtIndex = chl - 7;
+    int retsw = set_jt_sw(static_cast<RS_JT_E>(jtIndex), flag);
+    
+    if (retsw != FPGA_OK) {
+        qDebug() << "Failed to set_jt_sw" << "chl:" << chl;
+    }
+    
+    return retsw;
+}
+
+// 控制干扰器的开关状态
+int MatrixWidget::setJammerSw(int chl, bool flag) {
+    // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
+    int grIndex = chl - 11;
+    int retsw = set_gr_sw(static_cast<GR_OUT_E>(grIndex), flag);
+    
+    if (retsw != FPGA_OK) {
+        qDebug() << "Failed to set_gr_sw" << "chl:" << chl;
+    }
+    
+    return retsw;
+}
+
+void MatrixWidget::setChlSwitchToHw(int chl, bool flag) {
+    // 信道开关控制
+    if (IS_VALID_DYNAMIC_CHANNEL(chl)) { // DAC动态分配信道
         emit channelSwitchChanged(chl, flag);
-    }else if(IS_VALID_RECON_CHANNEL(chl)){//侦察设备
-        // int retsw=set_chl_sw(static_cast<RS_OUT_E>(chl),flag); //待填
-        // if (retsw != FPGA_OK) {
-        //     qDebug()<< "Failed to set_ch_sw" << "chl:"<<chl;
-        // }
-    }else if(IS_VALID_JAMMER(chl)){//干扰器
-        //int retsw=set_gr_sw();
-        // if (retsw != FPGA_OK) {
-        //     qDebug()<< "Failed to set_ch_sw" << "chl:"<<chl;
-        // }
+    } else if (IS_VALID_RECON_CHANNEL(chl)) { // 侦察设备
+        setReconSw(chl, flag);
+    } else if (IS_VALID_JAMMER(chl)) { // 干扰器
+        setJammerSw(chl, flag);
     }
 }
 // 创建凸起效果的widget
