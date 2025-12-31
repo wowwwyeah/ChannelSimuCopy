@@ -82,7 +82,6 @@ QVector<ModelParaSetting> DatabaseManager::getAllConfigs()
     QSqlQuery query("SELECT id, channelNum, modelName, noisePower, signalAnt, comDistance, multipathNum, filterNum,"
                     "multiPathType FROM configs ORDER BY id");
 
-    QMutexLocker locker(&globalMutex); // Mutex is locked here
     while (query.next()) {
         ModelParaSetting config;
         config.channelNum = query.value(1).toInt();
@@ -95,7 +94,10 @@ QVector<ModelParaSetting> DatabaseManager::getAllConfigs()
         QString JsonArrayString = query.value(8).toString();
         config.multipathType = parseJsonArray(JsonArrayString);
         ParaConfigs.append(config);
-        globalParaMap[config.modelName] = config;
+        {
+            QMutexLocker locker(&globalMutex);
+            globalParaMap[config.modelName] = config;
+        }
     }
 
     return ParaConfigs;

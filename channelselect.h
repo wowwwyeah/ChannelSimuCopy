@@ -14,9 +14,10 @@ public:
     int getSimuChannel();
     int getSwitchChannel();
 signals:
+    // 转发MatrixWidget的通道开关状态变化信号
+    void channelSwitchChanged(int channelNum, bool switchFlag);
 
 private:
-
     MatrixWidget *m_matrixWidget;
 };
 

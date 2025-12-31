@@ -2,12 +2,12 @@
 #include "mainwindow.h"
 #include "swipestackedwidget.h"
 #include "pageindicator.h"
+#include "pagewidget.h"
 #include "configmanager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QScreen>
-#include <QThread>
 #include <QToolBar>
 #include <QStatusBar>
 #include <QApplication>
@@ -51,108 +51,31 @@ void SubWindow::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
-    // 创建包含箭头和堆叠窗口的水平布局
-    QHBoxLayout *stackedLayout = new QHBoxLayout();
-
-    // === 左侧箭头按钮 ===
-    m_leftArrowButton = new QPushButton("◀", this);
-    m_leftArrowButton->setFixedSize(60, 60);
-    m_leftArrowButton->setStyleSheet(
-        "QPushButton {"
-        "   background-color: rgba(255, 255, 255, 30);"
-        "   border: 2px solid rgba(255, 255, 255, 80);"
-        "   border-radius: 30px;"
-        "   color: rgba(255, 255, 255, 80);"
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: rgba(255, 255, 255, 50);"
-        "   border-color: rgba(255, 255, 255, 120);"
-        "   color: rgba(255, 255, 255, 120);"
-        "}"
-        "QPushButton:pressed {"
-        "   background-color: rgba(255, 255, 255, 70);"
-        "}"
-        "QPushButton:disabled {"
-        "   background-color: rgba(255, 255, 255, 10);"
-        "   border-color: rgba(255, 255, 255, 30);"
-        "   color: rgba(255, 255, 255, 30);"
-        "}"
-        );
-
     // 创建滑动堆叠窗口
     m_stackedWidget = new SwipeStackedWidget(this);
-
-    // === 右侧箭头按钮 ===
-    m_rightArrowButton = new QPushButton("▶", this);
-    m_rightArrowButton->setFixedSize(60, 60);
-    m_rightArrowButton->setStyleSheet(m_leftArrowButton->styleSheet());
-
-    // 添加到水平布局
-    stackedLayout->addWidget(m_leftArrowButton);
-    stackedLayout->addWidget(m_stackedWidget);
-    stackedLayout->addWidget(m_rightArrowButton);
-
-    // 设置拉伸因子，让堆叠窗口占据主要空间
-    stackedLayout->setStretchFactor(m_leftArrowButton, 0);
-    stackedLayout->setStretchFactor(m_stackedWidget, 1);
-    stackedLayout->setStretchFactor(m_rightArrowButton, 0);
-
-    mainLayout->addLayout(stackedLayout);
+    mainLayout->addWidget(m_stackedWidget);
 
     // 创建页面指示器
     m_pageIndicator = new PageIndicator(m_pageTitle.size(), this);
     mainLayout->addWidget(m_pageIndicator);
 
-    //创建关闭工具栏
-    QToolBar *closetoolBar = new QToolBar(this);
-    addToolBar(closetoolBar);
-
-    // 添加左侧弹性空间
-    QWidget *spacer = new QWidget();
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    closetoolBar->addWidget(spacer);
-
-    // 添加关闭动作
-    QAction *closeAction = new QAction("返回", this);
-    closeAction->setShortcut(QKeySequence::Close); // 设置快捷键 Ctrl+W
-    closeAction->setStatusTip("回到主菜单"); // 状态栏提示
-    closetoolBar->setStyleSheet("color: #2196F3;");
-
-    // 连接信号槽
-    connect(closeAction, &QAction::triggered, this, &SubWindow::closeSubWindow);
-
-    // 添加到工具栏
-    closetoolBar->addAction(closeAction);
-
-    QWidget *rightFixedSpacer = new QWidget();
-    rightFixedSpacer->setFixedWidth(60); // 右侧留15px间距（可按需调整）
-    rightFixedSpacer->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    closetoolBar->addWidget(rightFixedSpacer);
-
     // 创建导航工具栏
     QToolBar *toolBar = new QToolBar(this);
     addToolBar(Qt::BottomToolBarArea, toolBar);
 
-    // 添加左侧弹性空间
-    QWidget *leftSpacer = new QWidget();
-    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    toolBar->addWidget(leftSpacer);
-
     // 添加按钮
     m_prevButton = new QPushButton("上一页", this);
     m_nextButton = new QPushButton("下一页", this);
-    m_startButton = new QPushButton("开始模拟", this);
+    m_startButton = new QPushButton("下发配置", this);
+    m_backButton = new QPushButton("返回", this);
+
     m_prevButton->setEnabled(true);
-    m_nextButton->setEnabled(true);
     m_startButton->setEnabled(true);
-    toolBar->setStyleSheet("QToolBar::separator { width: 30px; }"); // 分隔符宽度设为20px
-    toolBar->addWidget(m_prevButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(m_startButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(m_nextButton);
+
+    // 连接返回按钮信号槽
+    connect(m_backButton, &QPushButton::clicked, this, &SubWindow::closeSubWindow);
+    m_backButton->setShortcut(QKeySequence::Close); // 设置快捷键 Ctrl+W
+    m_backButton->setStatusTip("回到主菜单"); // 状态栏提示
 
     // 设置按钮样式
     m_startButton->setStyleSheet("QPushButton {"
@@ -167,19 +90,19 @@ void SubWindow::setupUI()
                                  "}");
 
     m_prevButton->setStyleSheet("QPushButton {"
-                                 "    background-color: #D98719;"
-                                 "    color: white;"
-                                 "    font-size: 12px;"
-                                 "    border-radius: 10px;"
-                                 "    padding: 4px 6px;"
-                                 "}"
-                                 "QPushButton:hover {"
-                                 "    background-color: #FF7F00;"
-                                 "}"
-                                 "QPushButton:disabled {"
-                                 "    background-color: #225555;"
-                                 "    color: 88AAAA;"
-                                 "}");
+                                "    background-color: #D98719;"
+                                "    color: white;"
+                                "    font-size: 12px;"
+                                "    border-radius: 10px;"
+                                "    padding: 4px 6px;"
+                                "}"
+                                "QPushButton:hover {"
+                                "    background-color: #FF7F00;"
+                                "}"
+                                "QPushButton:disabled {"
+                                "    background-color: #225555;"
+                                "    color: 88AAAA;"
+                                "}");
     m_nextButton->setStyleSheet("QPushButton {"
                                 "    background-color: #D98719;"
                                 "    color: white;"
@@ -195,22 +118,100 @@ void SubWindow::setupUI()
                                 "    color: 88AAAA;"
                                 "}");
 
+    // 为返回按钮设置样式
+    m_backButton->setStyleSheet("QPushButton {"
+                                "    background-color: #D98719;"
+                                "    color: white;"
+                                "    font-size: 12px;"
+                                "    border-radius: 10px;"
+                                "    padding: 4px 6px;"
+                                "}"
+                                "QPushButton:hover {"
+                                "    background-color: #FF7F00;"
+                                "}");
 
-    // 添加右侧弹性空间
-    QWidget *rightSpacer = new QWidget();
-    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    toolBar->addWidget(rightSpacer);
+    // 设置所有按钮的最小/最大尺寸
+    m_nextButton->setMinimumSize(118,50);
+    m_prevButton->setMinimumSize(118,50);
+    m_startButton->setMinimumSize(118,50);
+    m_backButton->setMinimumSize(118,50);
+
+    m_nextButton->setMaximumSize(118,50);
+    m_prevButton->setMaximumSize(118,50);
+    m_startButton->setMaximumSize(118,50);
+    m_backButton->setMaximumSize(118,50);
+
+    // 创建三个等宽的容器
+    QWidget *container1 = new QWidget();
+    QWidget *container2 = new QWidget();
+    QWidget *container3 = new QWidget();
+
+    // 设置容器的大小策略为Expanding，使它们等宽
+    container1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    container2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    container3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    // 为第二个容器创建水平布局
+    QHBoxLayout *container2Layout = new QHBoxLayout(container2);
+    container2Layout->setContentsMargins(0, 0, 0, 0);
+
+    // 在第二个容器中添加左侧弹簧，使按钮居中
+    QSpacerItem *container2LeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container2Layout->addSpacerItem(container2LeftSpacer);
+
+    // 在第二个容器中添加三个按钮
+    container2Layout->addWidget(m_prevButton);
+
+    // 添加分隔符
+    QFrame *separator1 = new QFrame();
+    separator1->setFrameShape(QFrame::VLine);
+    separator1->setFrameShadow(QFrame::Sunken);
+    separator1->setStyleSheet("color: #336666;");
+    container2Layout->addWidget(separator1);
+
+    container2Layout->addWidget(m_startButton);
+
+    // 添加分隔符
+    QFrame *separator2 = new QFrame();
+    separator2->setFrameShape(QFrame::VLine);
+    separator2->setFrameShadow(QFrame::Sunken);
+    separator2->setStyleSheet("color: #336666;");
+    container2Layout->addWidget(separator2);
+
+    container2Layout->addWidget(m_nextButton);
+
+    // 在第二个容器中添加右侧弹簧，使按钮居中
+    QSpacerItem *container2RightSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container2Layout->addSpacerItem(container2RightSpacer);
+
+    // 为第三个容器创建水平布局
+    QHBoxLayout *container3Layout = new QHBoxLayout(container3);
+    container3Layout->setContentsMargins(0, 0, 0, 0);
+
+    // 在第三个容器中添加左侧弹簧，使返回按钮居右
+    QSpacerItem *container3LeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container3Layout->addSpacerItem(container3LeftSpacer);
+
+    // 在第三个容器中添加返回按钮
+    container3Layout->addWidget(m_backButton);
+
+    // 将三个容器添加到工具栏
+    toolBar->addWidget(container1);
+    toolBar->addWidget(container2);
+    toolBar->addWidget(container3);
 
     connect(m_prevButton, &QPushButton::clicked, this, &SubWindow::goToPrevPage);
     connect(m_nextButton, &QPushButton::clicked, this, &SubWindow::goToNextPage);
     connect(m_startButton, &QPushButton::clicked, this, &SubWindow::startChannelSimu);
 
-    // 连接箭头按钮信号槽
-    connect(m_leftArrowButton, &QPushButton::clicked, this, &SubWindow::goToPrevPage);
-    connect(m_rightArrowButton, &QPushButton::clicked, this, &SubWindow::goToNextPage);
+    // 启用滑动（默认已启用）
+    m_stackedWidget->enableSwipe(true);
+
+    // 设置动画时长
+    m_stackedWidget->setAnimationDuration(400);
 
     // 连接信号
-    //connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &SubWindow::onSwipeFinished);
+    connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &SubWindow::onSwipeFinished);
     connect(m_stackedWidget, &SwipeStackedWidget::pageChanged, this, &SubWindow::onPageChanged);
 
     // 状态栏
@@ -250,6 +251,20 @@ void SubWindow::setupUI()
     statusBar()->showMessage("准备就绪");
 
     initWindowSize();
+
+    setBtnSize(118,50);
+}
+
+void SubWindow::setBtnSize(int width,int height){
+    m_nextButton->setMinimumSize(width,height);
+    m_prevButton->setMinimumSize(width,height);
+    m_startButton->setMinimumSize(width,height);
+    m_backButton->setMinimumSize(width,height);
+
+    m_nextButton->setMaximumSize(width,height);
+    m_prevButton->setMaximumSize(width,height);
+    m_startButton->setMaximumSize(width,height);
+    m_backButton->setMaximumSize(width,height);
 }
 
 void SubWindow::initWindowSize()
@@ -306,7 +321,7 @@ void SubWindow::onPageChanged(int index)
 {
     m_prevButton->setEnabled(true);
     m_nextButton->setEnabled(true);
-    //m_startButton->setEnabled(index < 1);
+    m_startButton->setEnabled(index < 1);
     m_pageIndicator->setCurrentIndex(index);
     statusBar()->showMessage(QString("当前页面: %1/%2").arg(index + 1).arg(m_pageTitle.size()));
 }
@@ -345,41 +360,46 @@ void SubWindow::closeSubWindow()
 
 void SubWindow::startChannelSimu()
 {
-    QMessageBox::StandardButton reply = QMessageBox::question(
-        this,
-        tr("开始模拟"),
-        tr("确定要下发配置开始模拟吗？"),
-        QMessageBox::Yes | QMessageBox::No
-        );
+    qDebug()<<"startChannelSimu--------------------------------1";
+    ModelParaSetting config;
+    config.channelNum = m_mainWindow->getChannelNum();
+    config.modelName = m_channelModelSelect->getSelectedRadioButtonText();
+    config.noisePower = m_channelBasicPara->getNoisePower();
+    config.signalAnt = m_channelBasicPara->getAttenuationPower();
+    config.comDistance = m_channelBasicPara->getCommunicationDistance();
+    config.filterNum = m_multipathPara->getFilterNum();
+    config.multipathNum = m_multipathPara->getMultipathCount();
+    config.multipathType = m_multipathPara->getMultipathPara();
 
-    if (reply == QMessageBox::Yes) {
+    qDebug()<<"滤波器编号:"<<config.filterNum;
 
-        ModelParaSetting config;
-        config.channelNum = m_mainWindow->getChannelNum();
-        qDebug() << "信道编号: " << config.channelNum;
-        config.modelName = m_channelModelSelect->getSelectedRadioButtonText();
-        qDebug() << "模型名称: " << config.modelName;
-        config.noisePower = m_channelBasicPara->getNoisePower();
-        qDebug() << "噪声功率: " << config.noisePower;
-        config.signalAnt = m_channelBasicPara->getAttenuationPower();
-        qDebug() << "信号衰减: " << config.signalAnt;
-        config.comDistance = m_channelBasicPara->getCommunicationDistance();
-        qDebug() << "通信距离: " << config.comDistance;
-        config.filterNum = m_multipathPara->getFilterNum();
-        qDebug() << "滤波编号: " << config.filterNum;
-        config.multipathNum = m_multipathPara->getMultipathCount();
-        qDebug() << "多径数量: " << config.multipathNum;
-        config.multipathType = m_multipathPara->getMultipathPara();
-
-
-        QMutexLocker locker(&globalMutex); // 子线程加锁，不阻塞 UI
+    {
+        QMutexLocker locker(&globalMutex);
         globalParaMap[config.modelName] = config;
-        m_mainWindow->setChannelPara(config); // 注意：若 setChannelPara 操作 UI，需改为信号！
-
+    }
+    qDebug()<<"下发配置,信道号"<<config.channelNum;
+    if(config.channelNum<=6){//DAC动态分配信道
+        emit configUpdated(config.modelName,config);
+    }else if(config.channelNum>6&&config.channelNum<=10){//侦察设备
+        setScoutCfg(config.channelNum,config);
+    }else if(config.channelNum>10&&config.channelNum<=15){//干扰器
+        setCountermeasurerCfg(config.channelNum,config);
     }
 
+    m_mainWindow->setChannelPara(config);
+    qDebug()<<"startChannelSimu--------------------------------2";
 }
 
+//配置侦察设备信道参数
+void SubWindow::setScoutCfg(int chl,const ModelParaSetting& config){
+    //衰减器
+
+}
+//配置干扰器信道参数
+void SubWindow::setCountermeasurerCfg(int chl,const ModelParaSetting& config){
+    //衰减器
+
+}
 
 QString SubWindow::getStatusStyle(const QString &status)
 {
@@ -401,81 +421,81 @@ void SubWindow::updateStatusBar()
     QMutexLocker locker(&globalMutex);
     switch(globalStatusMap[1].radioState)
     {
-        case RADIO_DISABLE:
-            m_label1->setText(QString("电台1:停止"));
-            m_indicator1->setStyleSheet(getStatusStyle("停止"));
-            break;
-        case RADIO_RECEIVE:
-            m_label1->setText(QString("电台1:接收"));
-            m_indicator1->setStyleSheet(getStatusStyle("接收"));
-            break;
-        case RADIO_TRANSMIT:
-            m_label1->setText(QString("电台1:发射，%1dbm").arg(globalStatusMap[1].txPower));
-            m_indicator1->setStyleSheet(getStatusStyle("发射"));
-            break;
-        case RADIO_ALARM:
-            m_label1->setText(QString("电台1:发射，%1dbm").arg(globalStatusMap[1].txPower));
-            m_indicator1->setStyleSheet(getStatusStyle("警告"));
-            break;
+    case RADIO_DISABLE:
+        m_label1->setText(QString("电台1:停止"));
+        m_indicator1->setStyleSheet(getStatusStyle("停止"));
+        break;
+    case RADIO_RECEIVE:
+        m_label1->setText(QString("电台1:接收"));
+        m_indicator1->setStyleSheet(getStatusStyle("接收"));
+        break;
+    case RADIO_TRANSMIT:
+        m_label1->setText(QString("电台1:发射，%1dbm").arg(globalStatusMap[1].txPower));
+        m_indicator1->setStyleSheet(getStatusStyle("发射"));
+        break;
+    case RADIO_ALARM:
+        m_label1->setText(QString("电台1:发射，%1dbm").arg(globalStatusMap[1].txPower));
+        m_indicator1->setStyleSheet(getStatusStyle("警告"));
+        break;
     }
 
     switch(globalStatusMap[2].radioState)
     {
-        case RADIO_DISABLE:
-            m_label2->setText(QString("电台2:停止"));
-            m_indicator2->setStyleSheet(getStatusStyle("停止"));
-            break;
-        case RADIO_RECEIVE:
-            m_label2->setText(QString("电台2:接收"));
-            m_indicator2->setStyleSheet(getStatusStyle("接收"));
-            break;
-        case RADIO_TRANSMIT:
-            m_label2->setText(QString("电台2:发射，%1dbm").arg(globalStatusMap[2].txPower));
-            m_indicator2->setStyleSheet(getStatusStyle("发射"));
-            break;
-        case RADIO_ALARM:
-            m_label2->setText(QString("电台2:发射，%1dbm").arg(globalStatusMap[2].txPower));
-            m_indicator2->setStyleSheet(getStatusStyle("警告"));
-            break;
+    case RADIO_DISABLE:
+        m_label2->setText(QString("电台2:停止"));
+        m_indicator2->setStyleSheet(getStatusStyle("停止"));
+        break;
+    case RADIO_RECEIVE:
+        m_label2->setText(QString("电台2:接收"));
+        m_indicator2->setStyleSheet(getStatusStyle("接收"));
+        break;
+    case RADIO_TRANSMIT:
+        m_label2->setText(QString("电台2:发射，%1dbm").arg(globalStatusMap[2].txPower));
+        m_indicator2->setStyleSheet(getStatusStyle("发射"));
+        break;
+    case RADIO_ALARM:
+        m_label2->setText(QString("电台2:发射，%1dbm").arg(globalStatusMap[2].txPower));
+        m_indicator2->setStyleSheet(getStatusStyle("警告"));
+        break;
     }
 
     switch(globalStatusMap[3].radioState)
     {
-        case RADIO_DISABLE:
-            m_label3->setText(QString("电台3:停止"));
-            m_indicator3->setStyleSheet(getStatusStyle("停止"));
-            break;
-        case RADIO_RECEIVE:
-            m_label3->setText(QString("电台3:接收"));
-            m_indicator3->setStyleSheet(getStatusStyle("接收"));
-            break;
-        case RADIO_TRANSMIT:
-            m_label3->setText(QString("电台3:发射，%1dbm").arg(globalStatusMap[3].txPower));
-            m_indicator3->setStyleSheet(getStatusStyle("发射"));
-            break;
-        case RADIO_ALARM:
-            m_label3->setText(QString("电台3:发射，%1dbm").arg(globalStatusMap[3].txPower));
-            m_indicator3->setStyleSheet(getStatusStyle("警告"));
-            break;
+    case RADIO_DISABLE:
+        m_label3->setText(QString("电台3:停止"));
+        m_indicator3->setStyleSheet(getStatusStyle("停止"));
+        break;
+    case RADIO_RECEIVE:
+        m_label3->setText(QString("电台3:接收"));
+        m_indicator3->setStyleSheet(getStatusStyle("接收"));
+        break;
+    case RADIO_TRANSMIT:
+        m_label3->setText(QString("电台3:发射，%1dbm").arg(globalStatusMap[3].txPower));
+        m_indicator3->setStyleSheet(getStatusStyle("发射"));
+        break;
+    case RADIO_ALARM:
+        m_label3->setText(QString("电台3:发射，%1dbm").arg(globalStatusMap[3].txPower));
+        m_indicator3->setStyleSheet(getStatusStyle("警告"));
+        break;
     }
 
     switch(globalStatusMap[4].radioState)
     {
-        case RADIO_DISABLE:
-            m_label4->setText(QString("电台4:停止"));
-            m_indicator4->setStyleSheet(getStatusStyle("停止"));
-            break;
-        case RADIO_RECEIVE:
-            m_label4->setText(QString("电台4:接收"));
-            m_indicator4->setStyleSheet(getStatusStyle("接收"));
-            break;
-        case RADIO_TRANSMIT:
-            m_label4->setText(QString("电台4:发射，%1dbm").arg(globalStatusMap[4].txPower));
-            m_indicator4->setStyleSheet(getStatusStyle("发射"));
-            break;
-        case RADIO_ALARM:
-            m_label4->setText(QString("电台4:发射，%1dbm").arg(globalStatusMap[4].txPower));
-            m_indicator4->setStyleSheet(getStatusStyle("警告"));
-            break;
+    case RADIO_DISABLE:
+        m_label4->setText(QString("电台4:停止"));
+        m_indicator4->setStyleSheet(getStatusStyle("停止"));
+        break;
+    case RADIO_RECEIVE:
+        m_label4->setText(QString("电台4:接收"));
+        m_indicator4->setStyleSheet(getStatusStyle("接收"));
+        break;
+    case RADIO_TRANSMIT:
+        m_label4->setText(QString("电台4:发射，%1dbm").arg(globalStatusMap[4].txPower));
+        m_indicator4->setStyleSheet(getStatusStyle("发射"));
+        break;
+    case RADIO_ALARM:
+        m_label4->setText(QString("电台4:发射，%1dbm").arg(globalStatusMap[4].txPower));
+        m_indicator4->setStyleSheet(getStatusStyle("警告"));
+        break;
     }
 }

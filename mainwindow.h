@@ -12,6 +12,7 @@
 #include "systemsetting.h"
 #include "configmanager.h"
 #include "databasemanager.h"
+#include "PttMonitorThread.h"
 
 
 class SwipeStackedWidget;
@@ -36,15 +37,25 @@ private slots:
     void onPageChanged(int index);
     void goToNextPage();
     void goToPrevPage();
+    void onExitButtonClicked();
+
+public slots:
     void goToNextWindow();
     void updateStatusBar();
 
+private slots:
+    // 处理配置更新信号的槽函数
+    void handleConfigUpdated(const QString& key, const ModelParaSetting& config);
+    // 处理通道开关状态变化信号的槽函数
+    void onChannelSwitchChanged(int channelNum, bool switchFlag);
 private:
     void setupUI();
     void initWindowSize();
     void createPages();
     // 初始化数据库
     void initDataBase();
+
+    void setBtnSize(int width,int height);
 
     // 获取电台状态样式
     QString getStatusStyle(const QString &status);
@@ -67,6 +78,7 @@ private:
     QPushButton *m_prevButton;
     QPushButton *m_nextButton;
     QPushButton *m_startButton;
+    QPushButton *m_exitButton;
 
     ChannelSelect *m_channelSelect;
     SimuListView *m_simuListView;
@@ -75,6 +87,7 @@ private:
     DatabaseManager *m_dbManager;
     ConfigManager *m_configManager;
     ChannelParaConifg *m_channelParaConfig;
+    PttMonitorThread *m_pttMonitorThread;
 
 };
 

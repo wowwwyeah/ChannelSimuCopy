@@ -17,6 +17,10 @@ class ConfigManager : public QObject
 {
     Q_OBJECT
 
+signals:
+    // 配置更新信号，当updateConfigInMap函数被调用时发出
+    void configUpdated(const QString& key, const ModelParaSetting& config);
+
 public:
     explicit ConfigManager(QObject *parent = nullptr);
 

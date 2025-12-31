@@ -47,6 +47,11 @@ typedef struct MultiPathType
     int dopplerType;			//多普勒谱类型
 }MultiPathType;
 
+typedef struct FilterParameter
+{
+    int params[19];                 //滤波器参数数组
+}FilterParameter;
+
 typedef struct ModelParaSetting
 {
     int channelNum;                 //电台之间通道
@@ -58,6 +63,7 @@ typedef struct ModelParaSetting
     int multipathNum;               //多径数量
     int filterNum;                  //滤波器编号
     QList<MultiPathType> multipathType;    //多径设置
+    bool switchFlag;                    //开关状态
 }ModelParaSetting;
 
 class ChannelParaConifg : public QObject
@@ -71,10 +77,15 @@ public:
     void setChannelConfig(const ModelParaSetting &paraInfo);
     void getRadioConfig();
     void setRadioConfig(const RadioConfig &radioConfigInfo);
+
+    // 获取指定编号的滤波器参数
+    static FilterParameter getFilterParameter(int filterNum);
+
 signals:
 
 private:
-
+    // 固定的滤波器参数（编号1-5）
+    static const FilterParameter m_filterParameters[5]; // 索引0-4对应滤波器1-5（使用滤波器编号-1作为索引）
 };
 
 #endif // CHANNELPARACONIFG_H

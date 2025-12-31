@@ -1,15 +1,29 @@
 
-QT += core gui widgets sql mqtt
+QT += core gui widgets sql
 QMAKE_RPATHDIR += /opt/firefly_qt5.15/lib
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-# You can make your code fail to compile if it uses deprecated APIs.
-# In order to do so, uncomment the following line.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+# #ARM交叉编译配置 MQTT
+# QT += mqtt
+
+# # GCC构建配置 - 手动链接MQTT
+QT_INSTALL_DIR = /home/dlj/Qt/5.15.2
+QT_QMAKE_DIR = $$QT_INSTALL_DIR/gcc_64/bin/
+INCLUDEPATH += $$QT_INSTALL_DIR/gcc_64/include/QtMqtt
+LIBS += -L$$QT_INSTALL_DIR/gcc_64/lib -lQt5Mqtt
+
+
+#定义USE_TOUCH_EVENT宏以支持触摸事件
+# DEFINES += USE_TOUCH_EVENT
+
+# 定义USE_FPGA_TEST宏以支持FPGA测试功能
+DEFINES += USE_FPGA_TEST
 
 SOURCES += \
+    PttMonitorThread.cpp \
+    RadioChannelManager.cpp \
     channelbasicpara.cpp \
     channelmodelselect.cpp \
     channelparaconifg.cpp \
@@ -18,6 +32,7 @@ SOURCES += \
     databasemanager.cpp \
     datamanager.cpp \
     iohandler.cpp \
+    fpga_driver.cpp \
     main.cpp \
     mainwindow.cpp \
     matrixwidget.cpp \
@@ -34,6 +49,9 @@ SOURCES += \
     systemsetting.cpp
 
 HEADERS += \
+    PttMonitorThread.h \
+    RadioChannelManager.h \
+    channel_utils.h \
     channelbasicpara.h \
     channelmodelselect.h \
     channelparaconifg.h \
@@ -42,6 +60,7 @@ HEADERS += \
     databasemanager.h \
     datamanager.h \
     iohandler.h \
+    fpga_driver.h \
     mainwindow.h \
     matrixwidget.h \
     mqttclient.h \
@@ -74,4 +93,3 @@ DISTFILES += \
     res/image/circle_remove.png \
     res/image/logo.png
 
-FORMS +=

@@ -25,17 +25,13 @@ public:
     double getCommunicationDistance() const { return m_communicationDistance; }
 
 signals:
-    void parametersChanged(double noisePower, double attenuationPower, double communicationDistance);
+    void parametersChanged(double attenuationPower, double communicationDistance);
     void settingsApplied();
 
 public slots:
     void resetToDefaults();
 
 private slots:
-    void onNoisePowerSliderChanged(int value);
-    void onNoisePowerDialChanged(int value);
-    void onNoisePowerSpinBoxChanged(double value);
-
     void onAttenuationPowerSliderChanged(int value);
     void onAttenuationPowerDialChanged(int value);
     void onAttenuationPowerSpinBoxChanged(double value);
@@ -44,6 +40,8 @@ private slots:
     void onDistanceDialChanged(int value);
     void onDistanceSpinBoxChanged(double value);
 
+    void onFrequencySpinBoxChanged(double value);
+
     void onApplyClicked();
     void onResetClicked();
 
@@ -51,10 +49,14 @@ private:
     void setupUI();
     void createPowerParametersGroup(); // 合并创建功率参数组
     void createCommunicationDistanceGroup();
-    void updateNoisePower(double value);
     void updateAttenuationPower(double value);
     void updateCommunicationDistance(double value);
+    void updateCommunicationDistance(double value, bool isCalculateAtten); // 新增重载声明
+    void updateFrequency(double value);
 
+    // 核心计算函数
+    double calculateAttenuationFromDistance(double distanceKm); // 距离→衰减功率
+    double calculateDistanceFromAttenuation(double attenuationDb); // 衰减功率→距离
     // 功率参数组（噪声功率 + 衰减功率）
     QGroupBox *m_powerGroup;
 
@@ -81,6 +83,10 @@ private:
     QPushButton *m_applyButton;
     QPushButton *m_resetButton;
 
+    // 标志位（防止循环触发）
+    bool m_isDistanceUpdating = false;
+    bool m_isAttenuationUpdating = false;
+
     // 参数值
     double m_noisePower;
     double m_attenuationPower;
@@ -92,7 +98,28 @@ private:
     const double ATTENUATION_POWER_MIN = 0.0;
     const double ATTENUATION_POWER_MAX = 100.0;
     const double DISTANCE_MIN = 1.0;
-    const double DISTANCE_MAX = 1000.0;
+    const double DISTANCE_MAX = 100.0;
+
+    // 通信距离与衰减功率计算参数（可配置）
+    struct RadioParams {
+        double txPower = 20.0;       // 发射功率（dBm）
+        double txGain = 2.0;         // 发射天线增益（dBi）
+        double rxGain = 2.0;         // 接收天线增益（dBi）
+        double rxSensitivity = -120.0;// 接收灵敏度（dBm）
+        double otherLoss = 10.0;     // 其他损耗（dB）
+        double frequency = 14.0;     // 工作频率（MHz）
+    } m_radioParams;
+
+    // 信号频率控件
+    QDoubleSpinBox *m_frequencySpinBox;
+
+    // 频率参数范围
+    const double FREQUENCY_MIN = 2.0;
+    const double FREQUENCY_MAX = 30.0;
+
+    // 标志位（防止循环触发）
+    bool m_isFrequencyUpdating = false;
+
 };
 
 #endif // CHANNELBASICPARA_H

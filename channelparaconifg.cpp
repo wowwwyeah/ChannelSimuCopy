@@ -51,7 +51,10 @@ void ChannelParaConifg::getRadioConfig()
         RadioStatus radiostatus;
         radiostatus.radioState = RADIO_TRANSMIT;
         radiostatus.txPower = 12;
-        globalStatusMap.insert(i, radiostatus);
+        {
+            QMutexLocker locker(&globalMutex);
+            globalStatusMap.insert(i, radiostatus);
+        }
     }
 
 #if 0
@@ -72,4 +75,37 @@ void ChannelParaConifg::setRadioConfig(const RadioConfig &radioConfigInfo)
     }
 #endif
 
+}
+
+// 初始化固定的滤波器参数
+const FilterParameter ChannelParaConifg::m_filterParameters[5] = {
+    // 滤波器1参数（索引0）
+    {{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900}},
+
+    // 滤波器2参数（索引1）
+    {{200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000}},
+
+    // 滤波器3参数（索引2）
+    {{300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100}},
+
+    // 滤波器4参数（索引3）
+    {{400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200}},
+
+    // 滤波器5参数（索引4）
+    {{500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300}}
+};
+
+// 获取指定编号的滤波器参数
+FilterParameter ChannelParaConifg::getFilterParameter(int filterNum)
+{
+    // 检查滤波器编号是否在有效范围内（1-5）
+    if (filterNum < 1 || filterNum > 5)
+    {
+        // 如果编号无效，返回默认参数（全0）
+        static const FilterParameter defaultParam = {{0}};
+        return defaultParam;
+    }
+
+    // 使用滤波器编号-1作为索引（滤波器1对应索引0，滤波器5对应索引4）
+    return m_filterParameters[filterNum - 1];
 }

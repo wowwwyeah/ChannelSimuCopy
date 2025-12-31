@@ -15,6 +15,7 @@ ConfigManager::ConfigManager(QObject *parent)
 // 添加配置到 Map
 void ConfigManager::addConfigToMap(const QString& key, const ModelParaSetting& config)
 {
+    QMutexLocker locker(&globalMutex);
     if (globalParaMap.contains(key)) {
         qWarning() << "Key already exists:" << key;
         return;
@@ -26,6 +27,7 @@ void ConfigManager::addConfigToMap(const QString& key, const ModelParaSetting& c
 // 从 Map 中移除配置
 bool ConfigManager::removeConfigFromMap(const QString& key)
 {
+    QMutexLocker locker(&globalMutex);
     if (globalParaMap.remove(key) > 0) {
         qDebug() << "Removed config:" << key;
         return true;
@@ -37,6 +39,7 @@ bool ConfigManager::removeConfigFromMap(const QString& key)
 // 获取配置
 ModelParaSetting ConfigManager::getConfigFromMap(const QString& key)
 {
+    QMutexLocker locker(&globalMutex);
     if (!globalParaMap.contains(key)) {
         qWarning() << "Config not found:" << key;
     }
@@ -46,9 +49,11 @@ ModelParaSetting ConfigManager::getConfigFromMap(const QString& key)
 // 更新配置
 bool ConfigManager::updateConfigInMap(const QString& key, const ModelParaSetting& config)
 {
+    QMutexLocker locker(&globalMutex);
     if (globalParaMap.contains(key)) {
         globalParaMap[key] = config;
         qDebug() << "Updated config:" << key;
+        emit configUpdated(key, config);
         return true;
     }
     qWarning() << "Config not found for update:" << key;
@@ -58,12 +63,14 @@ bool ConfigManager::updateConfigInMap(const QString& key, const ModelParaSetting
 // 获取所有配置键
 QList<QString> ConfigManager::getAllConfigKeys()
 {
+    QMutexLocker locker(&globalMutex);
     return globalParaMap.keys();
 }
 
 // 清空 Map
 void ConfigManager::clearGlobalMap()
 {
+    QMutexLocker locker(&globalMutex);
     globalParaMap.clear();
     qDebug() << "Global map cleared";
 }

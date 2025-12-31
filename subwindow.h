@@ -22,7 +22,7 @@ public:
 
     // 设置主窗口引用
     void setMainWindow(MainWindow *mainWindow);
-
+    void setBtnSize(int width,int height);
 private slots:
     void onSwipeFinished();
     void onPageChanged(int index);
@@ -31,13 +31,20 @@ private slots:
     void updateStatusBar();
     void closeSubWindow();
     void startChannelSimu();
-
+signals:
+    // 配置更新信号，当updateConfigInMap函数被调用时发出
+    void configUpdated(const QString& key, const ModelParaSetting& config);
 private:
     void setupUI();
     void initWindowSize();
     void createPages();
+    //配置侦察设备信道参数
+    void setScoutCfg(int chl,const ModelParaSetting& config);
+    //配置干扰器信道参数
+    void setCountermeasurerCfg(int chl,const ModelParaSetting& config);
     // 获取电台状态样式
     QString getStatusStyle(const QString &status);
+
     MainWindow *m_mainWindow;  // 主窗口引用
     QTimer *m_timer;
     QLabel *m_label1;
@@ -51,11 +58,10 @@ private:
     SwipeStackedWidget *m_stackedWidget;
     PageIndicator *m_pageIndicator;
     QVector<QString> m_pageTitle;
-    QPushButton *m_leftArrowButton;
-    QPushButton *m_rightArrowButton;
     QPushButton *m_prevButton;
     QPushButton *m_nextButton;
     QPushButton *m_startButton;
+    QPushButton *m_backButton;
 
     ChannelModelSelect *m_channelModelSelect;
     ChannelBasicPara *m_channelBasicPara;

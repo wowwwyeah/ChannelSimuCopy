@@ -28,6 +28,7 @@ void ChannelSelect::initUI()
     // 表格控件
     m_matrixWidget = new MatrixWidget();
     layout->addWidget(m_matrixWidget);
+    connect(m_matrixWidget, &MatrixWidget::channelSwitchChanged, this, &ChannelSelect::channelSwitchChanged);
 
     // 设置布局拉伸因子
     layout->setStretchFactor(title, 0);           // 标签不拉伸

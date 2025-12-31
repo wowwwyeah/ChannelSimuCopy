@@ -3,6 +3,7 @@
 #include "matrixwidget.h"
 #include "swipestackedwidget.h"
 #include "pageindicator.h"
+#include "pagewidget.h"
 #include <QScreen>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -11,7 +12,7 @@
 #include <QStatusBar>
 #include <QMessageBox>
 #include <QApplication>
-
+#include "fpga_driver.h"
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -31,22 +32,100 @@ MainWindow::MainWindow(QWidget *parent)
     m_configManager = new ConfigManager();
     m_channelParaConfig = new ChannelParaConifg();
 
+    // 连接配置更新信号到槽函数
+    connect(m_configManager, &ConfigManager::configUpdated, this, &MainWindow::handleConfigUpdated);
+
+    // 创建并启动PTT监控线程
+    m_pttMonitorThread = new PttMonitorThread(m_configManager, this);
+    m_pttMonitorThread->start();
+
     // 创建定时器
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &MainWindow::updateStatusBar);
 
     // 启动定时器，每1000毫秒（1秒）触发一次
-    m_timer->start(5000);
+    m_timer->start(1000);
 }
 
 MainWindow::~MainWindow()
 {
-    m_timer->stop();
+    // 停止并释放PTT监控线程
+    if (m_pttMonitorThread) {
+        m_pttMonitorThread->stop();
+        m_pttMonitorThread->wait();
+        delete m_pttMonitorThread;
+        m_pttMonitorThread = nullptr;
+    }
+
+    // 停止并释放定时器
+    if (m_timer) {
+        m_timer->stop();
+        delete m_timer;
+        m_timer = nullptr;
+    }
+
+    // 释放配置管理器和通道参数配置
+    if (m_configManager) {
+        delete m_configManager;
+        m_configManager = nullptr;
+    }
+
+    if (m_channelParaConfig) {
+        delete m_channelParaConfig;
+        m_channelParaConfig = nullptr;
+    }
+
+    // 释放数据库管理器
+    if (m_dbManager) {
+        delete m_dbManager;
+        m_dbManager = nullptr;
+    }
+
+    int ret=fpga_deinit();
+    if(ret!=FPGA_OK){
+        qDebug()<<"fpga delete fail";
+    }
+}
+void MainWindow::handleConfigUpdated(const QString& key, const ModelParaSetting& config){
+    // 处理配置更新，唤醒PttMonitorThread线程
+    qDebug()<<"handleConfigUpdated";
+    if (m_pttMonitorThread) {
+        m_pttMonitorThread->wakeUp();
+        qDebug() << "配置更新，唤醒PTT监控线程,信道编号:" << config.channelNum<<"开关状态:"<<config.switchFlag;
+    }
+}
+void MainWindow::onChannelSwitchChanged(int channelNum, bool switchFlag)
+{
+    qDebug() << "接收到通道开关状态变化信号: channel=" << channelNum << ", switchFlag=" << switchFlag;
+
+    // 获取所有配置键
+    QList<QString> keys = m_configManager->getAllConfigKeys();
+
+    qDebug()<<"当前缓存信道配置总数"<<keys.size()<<"当前信道编号:"<<channelNum;
+    ModelParaSetting config;
+    // 遍历所有配置，找到匹配当前信道编号的配置
+    for (const QString& key : keys) {
+        // 获取配置信息
+        config = m_configManager->getConfigFromMap(key);
+
+        // 如果配置的信道编号与当前信道编号匹配
+        if (config.channelNum == channelNum) {
+            config.switchFlag=switchFlag;
+            {
+                QMutexLocker locker(&globalMutex);
+                globalParaMap[key]=config;
+            }
+
+            handleConfigUpdated(key,config);
+        }
+    }
 }
 
 void MainWindow::setSubWindow(SubWindow *subWindow)
 {
     m_subWindow = subWindow;
+
+    connect(m_subWindow, &SubWindow::configUpdated, this, &MainWindow::handleConfigUpdated);
 }
 
 void MainWindow::setupUI()
@@ -56,55 +135,9 @@ void MainWindow::setupUI()
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
-    // 创建包含箭头和堆叠窗口的水平布局
-    QHBoxLayout *stackedLayout = new QHBoxLayout();
-
-    // === 左侧箭头按钮 ===
-    m_leftArrowButton = new QPushButton("◀", this);
-    m_leftArrowButton->setFixedSize(60, 60);
-    m_leftArrowButton->setStyleSheet(
-        "QPushButton {"
-        "   background-color: rgba(255, 255, 255, 30);"
-        "   border: 2px solid rgba(255, 255, 255, 80);"
-        "   border-radius: 30px;"
-        "   color: rgba(255, 255, 255, 80);"
-        "   font-size: 24px;"
-        "   font-weight: bold;"
-        "}"
-        "QPushButton:hover {"
-        "   background-color: rgba(255, 255, 255, 50);"
-        "   border-color: rgba(255, 255, 255, 120);"
-        "   color: rgba(255, 255, 255, 120);"
-        "}"
-        "QPushButton:pressed {"
-        "   background-color: rgba(255, 255, 255, 70);"
-        "}"
-        "QPushButton:disabled {"
-        "   background-color: rgba(255, 255, 255, 10);"
-        "   border-color: rgba(255, 255, 255, 30);"
-        "   color: rgba(255, 255, 255, 30);"
-        "}"
-        );
-
     // 创建滑动堆叠窗口
     m_stackedWidget = new SwipeStackedWidget(this);
-
-    // === 右侧箭头按钮 ===
-    m_rightArrowButton = new QPushButton("▶", this);
-    m_rightArrowButton->setFixedSize(60, 60);
-    m_rightArrowButton->setStyleSheet(m_leftArrowButton->styleSheet());
-
-    // 添加到水平布局
-    stackedLayout->addWidget(m_leftArrowButton);
-    stackedLayout->addWidget(m_stackedWidget);
-    stackedLayout->addWidget(m_rightArrowButton);
-
-    // 设置拉伸因子，让堆叠窗口占据主要空间
-    stackedLayout->setStretchFactor(m_leftArrowButton, 0);
-    stackedLayout->setStretchFactor(m_stackedWidget, 1);
-    stackedLayout->setStretchFactor(m_rightArrowButton, 0);
-
-    mainLayout->addLayout(stackedLayout);
+    mainLayout->addWidget(m_stackedWidget);
 
     // 创建页面指示器
     m_pageIndicator = new PageIndicator(m_pageTitle.size(), this);
@@ -114,23 +147,90 @@ void MainWindow::setupUI()
     QToolBar *toolBar = new QToolBar(this);
     addToolBar(Qt::BottomToolBarArea, toolBar);
 
-    // 添加左侧弹性空间
-    QWidget *leftSpacer = new QWidget();
-    leftSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    toolBar->addWidget(leftSpacer);
-
     // 添加按钮
     m_prevButton = new QPushButton("上一页", this);
     m_nextButton = new QPushButton("下一页", this);
-    m_startButton = new QPushButton("准备模拟", this);
+    m_startButton = new QPushButton("编辑配置", this);
     m_prevButton->setEnabled(true);
     m_startButton->setEnabled(true);
-    toolBar->setStyleSheet("QToolBar::separator { width: 30px; }"); // 分隔符宽度设为20px
-    toolBar->addWidget(m_prevButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(m_startButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(m_nextButton);
+
+    // 添加退出按钮
+    m_exitButton = new QPushButton("退出", this);
+    m_exitButton->setMinimumSize(100, 40);
+    m_exitButton->setMaximumSize(100, 40);
+    m_exitButton->setStyleSheet("QPushButton { " \
+                                "    background-color: #8B2323; " \
+                                "    color: white; " \
+                                "    font-size: 12px; " \
+                                "    border-radius: 10px; " \
+                                "    padding: 4px 6px; " \
+                                "}" \
+                                "QPushButton:hover { " \
+                                "    background-color: #B22222; " \
+                                "}" \
+                                "QPushButton:disabled { " \
+                                "    background-color: #225555; " \
+                                "    color: 88AAAA; " \
+                                "}");
+
+    // 创建三个等宽的容器
+    QWidget *container1 = new QWidget();
+    QWidget *container2 = new QWidget();
+    QWidget *container3 = new QWidget();
+
+    // 设置容器的大小策略为Expanding，使它们等宽
+    container1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    container2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    container3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    // 为第二个容器创建水平布局
+    QHBoxLayout *container2Layout = new QHBoxLayout(container2);
+    container2Layout->setContentsMargins(0, 0, 0, 0);
+
+    // 在第二个容器中添加左侧弹簧，使按钮居中
+    QSpacerItem *container2LeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container2Layout->addSpacerItem(container2LeftSpacer);
+
+    // 在第二个容器中添加三个按钮
+    container2Layout->addWidget(m_prevButton);
+
+    // 添加分隔符
+    QFrame *separator1 = new QFrame();
+    separator1->setFrameShape(QFrame::VLine);
+    separator1->setFrameShadow(QFrame::Sunken);
+    separator1->setStyleSheet("color: #336666;");
+    container2Layout->addWidget(separator1);
+
+    container2Layout->addWidget(m_startButton);
+
+    // 添加分隔符
+    QFrame *separator2 = new QFrame();
+    separator2->setFrameShape(QFrame::VLine);
+    separator2->setFrameShadow(QFrame::Sunken);
+    separator2->setStyleSheet("color: #336666;");
+    container2Layout->addWidget(separator2);
+
+    container2Layout->addWidget(m_nextButton);
+
+    // 在第二个容器中添加右侧弹簧，使按钮居中
+    QSpacerItem *container2RightSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container2Layout->addSpacerItem(container2RightSpacer);
+
+    // 为第三个容器创建水平布局
+    QHBoxLayout *container3Layout = new QHBoxLayout(container3);
+    container3Layout->setContentsMargins(0, 0, 0, 0);
+
+    // 在第三个容器中添加左侧弹簧，使退出按钮居右
+    QSpacerItem *container3LeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+    container3Layout->addSpacerItem(container3LeftSpacer);
+
+    // 在第三个容器中添加退出按钮
+    container3Layout->addWidget(m_exitButton);
+
+    // 将三个容器添加到工具栏
+    toolBar->addWidget(container1);
+    toolBar->addWidget(container2);
+    toolBar->addWidget(container3);
 
     // 设置按钮样式
     m_startButton->setStyleSheet("QPushButton {"
@@ -177,21 +277,19 @@ void MainWindow::setupUI()
                                 "}");
 
 
-    // 添加右侧弹性空间
-    QWidget *rightSpacer = new QWidget();
-    rightSpacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    toolBar->addWidget(rightSpacer);
-
     connect(m_prevButton, &QPushButton::clicked, this, &MainWindow::goToPrevPage);
     connect(m_nextButton, &QPushButton::clicked, this, &MainWindow::goToNextPage);
     connect(m_startButton, &QPushButton::clicked, this, &MainWindow::goToNextWindow);
+    connect(m_exitButton, &QPushButton::clicked, this, &MainWindow::onExitButtonClicked);
 
-    // 连接箭头按钮信号槽
-    connect(m_leftArrowButton, &QPushButton::clicked, this, &MainWindow::goToPrevPage);
-    connect(m_rightArrowButton, &QPushButton::clicked, this, &MainWindow::goToNextPage);
+    // 启用滑动（默认已启用）
+    m_stackedWidget->enableSwipe(true);
+
+    // 设置动画时长
+    m_stackedWidget->setAnimationDuration(400);
 
     // 连接信号
-    //connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &MainWindow::onSwipeFinished);
+    connect(m_stackedWidget, &SwipeStackedWidget::swipeFinished, this, &MainWindow::onSwipeFinished);
     connect(m_stackedWidget, &SwipeStackedWidget::pageChanged, this, &MainWindow::onPageChanged);
 
     // 状态栏
@@ -231,6 +329,33 @@ void MainWindow::setupUI()
     statusBar()->showMessage("准备就绪");
 
     initWindowSize();
+    setBtnSize(118,50);
+}
+
+void MainWindow::setBtnSize(int width,int height){
+
+    m_nextButton->setMinimumSize(width,height);
+    m_prevButton->setMinimumSize(width,height);
+    m_startButton->setMinimumSize(width,height);
+    m_exitButton->setMinimumSize(width,height);
+
+    m_nextButton->setMaximumSize(width,height);
+    m_prevButton->setMaximumSize(width,height);
+    m_startButton->setMaximumSize(width,height);
+    m_exitButton->setMaximumSize(width,height);
+}
+
+void MainWindow::onExitButtonClicked()
+{
+    // 弹出确认对话框
+    QMessageBox::StandardButton reply = QMessageBox::question(this, "退出确认", "确定要退出程序吗？",
+                                                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        // 确认退出，关闭应用程序
+        QApplication::quit();
+    }
+    // 如果选择No，什么都不做
 }
 
 void MainWindow::initWindowSize()
@@ -268,6 +393,9 @@ void MainWindow::createPages()
     m_stackedWidget->addWidget(m_simuListView);
     m_stackedWidget->addWidget(m_systmSetting);
 
+    // 连接ChannelSelect的通道开关状态变化信号
+    connect(m_channelSelect, &ChannelSelect::channelSwitchChanged, this, &MainWindow::onChannelSwitchChanged);
+
     m_stackedWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     m_pageIndicator->setCurrentIndex(0);
@@ -288,7 +416,7 @@ void MainWindow::initDataBase()
     }
 
     // 获取数据库中数据
-    //m_paraConfigs = m_dbManager->getAllConfigs();
+    m_dbManager->getAllConfigs();
 }
 
 void MainWindow::onSwipeFinished()
@@ -355,10 +483,7 @@ void MainWindow::setChannelPara(const ModelParaSetting &config)
 {
     m_configManager->addConfigToMap(config.modelName, config);
     m_dbManager->insertParaConfig(config);
-    m_simuListView->insertScenarioData(config);
-    //m_channelParaConfig->setChannelConfig(config);
-
-    QMessageBox::information(this, tr("下发成功"), tr("已成功下发配置！"));
+    m_channelParaConfig->setChannelConfig(config);
 }
 
 QString MainWindow::getStatusStyle(const QString &status)
