@@ -122,26 +122,33 @@ void PttMonitorThread::run()
 
                 qDebug()<<"当前缓存信道配置总数"<<keys.size();
 
+                for (const QString& key : keys) {
+                    ModelParaSetting config = m_configManager->getConfigFromMap(key);
+                    qDebug()<<"当前缓存的配置对应的信道号:"<<config.channelNum;
+                }
+
                 // 遍历当前正在使用的信道编号列表
                 for (INT8 channelNum : currentChannelList) {
                     // 遍历所有配置，找到匹配当前信道编号的配置
                     for (const QString& key : keys) {
                         // 获取配置信息
                         ModelParaSetting config = m_configManager->getConfigFromMap(key);
-                        int dacChannelIndex = dacChannels.indexOf(channelNum);
-
-                        // 如果配置的信道编号与当前信道编号匹配
-                        if (config.channelNum == qAbs(channelNum)) {
-                            // 找到该信道对应的DAC通道索引
-                            int dacChannelIndex = dacChannels.indexOf(channelNum);
-                            if (dacChannelIndex != -1) {
-                                // 发送参数到硬件
-                                m_manager->sendToHardware(dacChannelIndex, config);
-                                if(pttChanged){
-                                    m_manager->resetFpgaChl(dacChannelIndex,channelNum);
+                        if(config.isChange||pttChanged){
+                            // 如果配置的信道编号与当前信道编号匹配
+                            if(qAbs(config.channelNum) == qAbs(channelNum)){
+                                // 找到该信道对应的DAC通道索引
+                                int dacChannelIndex = dacChannels.indexOf(channelNum);
+                                if (dacChannelIndex != -1) {
+                                    // 发送参数到硬件
+                                    m_manager->sendToHardware(dacChannelIndex, config);
+                                    if(pttChanged){
+                                        m_manager->resetFpgaChl(dacChannelIndex,channelNum);
+                                    }
                                 }
+                                config.isChange=false;
+                                m_configManager->updateConfigInMap(key,config);
+                                break; // 找到匹配的配置后跳出内层循环
                             }
-                            break; // 找到匹配的配置后跳出内层循环
                         }
                     }
                 }

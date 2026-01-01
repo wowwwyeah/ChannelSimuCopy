@@ -5,10 +5,10 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QPalette>
-
+#include <QDebug>
 ChannelBasicPara::ChannelBasicPara(QWidget *parent)
     : QWidget(parent)
-    , m_attenuationPower(50.0)
+    , m_attenuationPower(0)
     , m_communicationDistance(10.0)  // 默认值改为10.0（匹配重置逻辑）
 {
     setupUI();
@@ -244,6 +244,9 @@ void ChannelBasicPara::createPowerParametersGroup()
 
     // === 第三行：滚动条 ===
     // 通信距离滚动条
+    // DISTANCE_MIN=calculateDistanceFromAttenuation(60);
+    // DISTANCE_MAX=calculateDistanceFromAttenuation(ATTENUATION_POWER_MIN);
+
     QHBoxLayout *distanceSliderLayout = new QHBoxLayout();
     QLabel *distanceMinLabel = new QLabel(QString::number(DISTANCE_MIN, 'f', 0));
     QLabel *distanceMaxLabel = new QLabel(QString::number(DISTANCE_MAX, 'f', 0));
@@ -532,34 +535,29 @@ void ChannelBasicPara::resetToDefaults()
 // 计算：通信距离 → 衰减功率
 double ChannelBasicPara::calculateAttenuationFromDistance(double distanceKm)
 {
-    double d = qBound(DISTANCE_MIN, distanceKm, DISTANCE_MAX);
-    double f = qBound(FREQUENCY_MIN, m_radioParams.frequency, FREQUENCY_MAX);
+    // 计算自由空间路径损耗（距离单位：km，频率单位：MHz）
+    double pathLoss = 32.44 + 20 * log10(distanceKm) + 20 * log10(m_radioParams.frequency);
 
-    // 自由空间传播损耗（正确公式：Lfs(dB) = 20log10(d) + 20log10(f) + 32.45）
-    double Lfs = 20 * log10(d) + 20 * log10(f) + 32.45;
+    // 计算接收功率
+    double rxPower = m_radioParams.txPower + m_radioParams.txGain + m_radioParams.rxGain
+                     - pathLoss - m_radioParams.otherLoss;
 
-    // 衰减功率计算
-    double Patten = m_radioParams.txPower + m_radioParams.txGain + m_radioParams.rxGain
-                    - Lfs - m_radioParams.rxSensitivity - m_radioParams.otherLoss;
-
-    // 约束范围+保留1位小数
-    Patten = qBound(0.0, Patten, 100.0);
-    return static_cast<double>(qRound(Patten * 10)) / 10;
+    qDebug()<<"通信距离 "<<distanceKm<<"衰减功率"<<rxPower;
+    return rxPower;
 }
 
 // 计算：衰减功率 → 通信距离
 double ChannelBasicPara::calculateDistanceFromAttenuation(double attenuationDb)
 {
-    double patten = qBound(0.0, attenuationDb, 100.0);
-    double f = qBound(FREQUENCY_MIN, m_radioParams.frequency, FREQUENCY_MAX);
+    // 计算最大允许的路径损耗
+    double maxPathLoss = m_radioParams.txPower + m_radioParams.txGain + m_radioParams.rxGain
+                         - m_radioParams.rxSensitivity - m_radioParams.otherLoss;
 
-    // 距离公式推导（基于正确的自由空间传播损耗公式）
-    double exponent = (m_radioParams.txPower + m_radioParams.txGain + m_radioParams.rxGain
-                       - patten - m_radioParams.rxSensitivity - m_radioParams.otherLoss
-                       - 20 * log10(f) - 32.45) / 20;
-    double distanceKm = pow(10, exponent);
-
-    // 约束范围+保留1位小数
-    distanceKm = qBound(DISTANCE_MIN, distanceKm, DISTANCE_MAX);
-    return static_cast<double>(qRound(distanceKm * 10)) / 10;
+    // 从路径损耗反推距离
+    // Lp = 32.44 + 20log10(d) + 20log10(f)
+    // 20log10(d) = Lp - 32.44 - 20log10(f)
+    double term = maxPathLoss - 32.44 - 20 * log10(m_radioParams.frequency);
+    double distance_km = pow(10, term / 20.0);
+    qDebug()<<"衰减功率"<<attenuationDb<<"通信距离 "<<distance_km;
+    return distance_km;
 }

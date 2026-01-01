@@ -68,7 +68,7 @@ typedef enum {
 
 typedef enum {
     DATA_SRC_NONE = 0,
-    DATA_SRC_ADC1_ALG,
+    DATA_SRC_ADC1_ALG,  //adc1 +alg
     DATA_SRC_ADC2_ALG,
     DATA_SRC_ADC3_ALG,
     DATA_SRC_ADC4_ALG,
@@ -122,6 +122,7 @@ struct radios {
     uint64_t radio_power[4];
 };
 struct low_adc {
+    uint8_t radio_sta;  //0001 :4321  1发送、4接收
     uint32_t low_adc_buf[4];
 };
 //带阻滤波
@@ -150,7 +151,7 @@ int set_ptt_gate(int v_value);
 int set_ladc_tap(int tap_clk);
 int set_jt_sw(RS_JT_E rs_jt, bool sw);
 int set_jt_att_value(RS_JT_E rs_jt, float att);
-int set_chl_sw(RS_OUT_E rs_out, bool sw);
+int set_chl_sw(RS_OUT_E rs_out, int sw);
 int set_chl_sw4(RS_OUT_E rs_out, int sw);
 int set_chl_att(RS_OUT_E rs_out, float att);
 int set_chl_out_sel(RS_OUT_E rs_out, DATA_SRC src_sel);

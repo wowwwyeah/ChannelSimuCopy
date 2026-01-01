@@ -96,9 +96,9 @@ private:
     const double NOISE_POWER_MIN = -120.0;
     const double NOISE_POWER_MAX = 0.0;
     const double ATTENUATION_POWER_MIN = 0.0;
-    const double ATTENUATION_POWER_MAX = 100.0;
-    const double DISTANCE_MIN = 1.0;
-    const double DISTANCE_MAX = 100.0;
+    const double ATTENUATION_POWER_MAX = 63;
+    double DISTANCE_MIN = 1.0;
+    double DISTANCE_MAX = 100.0;
 
     // 通信距离与衰减功率计算参数（可配置）
     struct RadioParams {

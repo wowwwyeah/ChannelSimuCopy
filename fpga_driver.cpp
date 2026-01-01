@@ -414,7 +414,6 @@ int read_reg(FPGA_IDX idx, uint32_t reg_addr, uint32_t* out_value) {
     //SO_DEBUG("addr:0x%X, value:0x%X", reg_addr, reg.value);
     return 0;
 }
-
 int write_reg(FPGA_IDX idx, uint32_t reg_addr, uint32_t value) {
     CTL_REG reg = {idx, reg_addr, value };
     int ret;
@@ -427,14 +426,16 @@ int write_reg(FPGA_IDX idx, uint32_t reg_addr, uint32_t value) {
     }
     //SO_DEBUG("addr:0x%X, value:0x%X", reg_addr, value);
 
-    // 立即读回验证
-    uint32_t readback;
-    if (read_reg(FPGA1, reg_addr, &readback) == 0) {
-        if (readback != value) {
-            SO_DEBUG("write fail, w_value:0x%x, r_value:0x%x", value, readback);
-        }
+    reg.fpga_idx = idx;
+    reg.addr = reg_addr;
+    reg.value = 0;
+    ret = ioctl(g_spi_fd, FPGA_GET_VALUE, &reg);
+    if (ret < 0) {
+        perror("ioctl FPGA_GET_VALUE failed");
+        return -1;
     }
 
+    //SO_DEBUG("addr:0x%X, value:0x%X", reg_addr, reg.value);
     return 0;
 }
 
@@ -622,6 +623,10 @@ int set_att_l_gate(float dbfs) {
 /*低速adc查询*/
 int get_low_adc(struct low_adc *lowadc) {
     uint32_t lowadc_value[4];
+    uint32_t ptt_state;
+    read_reg(FPGA1, REG_PTT_STATE, &ptt_state);
+
+    lowadc->radio_sta = ptt_state & 0XF;
     for (int i = 0; i < 4; i++) {
         read_reg(FPGA1, LOW_ADC[i], &lowadc_value[i]);
         lowadc->low_adc_buf[i] = lowadc_value[i];
@@ -851,7 +856,7 @@ int set_jt_att_value(RS_JT_E rs_jt, float att) {
     CHX二选一开关
     输入：DAC的0-3通道，开关
 */
-int set_chl_sw(RS_OUT_E rs_out, bool sw) {
+int set_chl_sw(RS_OUT_E rs_out, int sw) {
 #ifdef  USE_FPGA_TEST
     qDebug() << "成功调用set_chl_sw()"<<"rs_out"<<rs_out<<"sw"<<sw;
     return FPGA_OK;
@@ -871,6 +876,7 @@ int set_chl_sw(RS_OUT_E rs_out, bool sw) {
         current_sw_value &= ~mask;
     }
     write_reg(FPGA1, REG_CH_ATT_TX_EN, current_sw_value);
+    SO_DEBUG("rs_out:%d, sw value:%d, current_sw_value:%d ",rs_out, sw,current_sw_value );
     return FPGA_OK;
 
 }
@@ -903,13 +909,13 @@ int set_chl_sw4(RS_OUT_E rs_out, int sw) {
 
     // 4. 设置新值（注意：sw=1→00, sw=2→01, sw=3→10, sw=4→11）
     uint32_t new_field;
-    if (sw == 1) {
+    if (sw == 0) {
         new_field = 0x0;  // 00
-    } else if (sw == 2) {
+    } else if (sw == 1) {
         new_field = 0x1;  // 01
-    } else if (sw == 3) {
+    } else if (sw == 2) {
         new_field = 0x2;  // 10
-    } else if (sw == 4) {
+    } else if (sw == 3) {
         new_field = 0x3;  // 11
     } else {
         SO_DEBUG("invalid sw value:%d", sw);
@@ -917,6 +923,7 @@ int set_chl_sw4(RS_OUT_E rs_out, int sw) {
 
     current_val |= (new_field << shift);
     write_reg(FPGA1, REG_CH_ATT_V1V2, current_val);
+    SO_DEBUG("rs_out:%d, sw value:%d, current_val:%d ",rs_out, sw,current_val );
     return FPGA_OK;
 }
 
@@ -999,6 +1006,8 @@ int set_chl_out_sel(RS_OUT_E rs_out, DATA_SRC src_sel) {
     uint32_t new_value;
 
     read_reg(FPGA1, REG_DAC_OUT_SEL, &old_value);
+    SO_DEBUG("rs_out:%d, src_sel:%d, old_value:%d",rs_out,src_sel, old_value);
+    SO_DEBUG("addr:0x%X, value:0x%X", REG_DAC_OUT_SEL, old_value);
     switch (src_sel)
     {
     case DATA_SRC_NONE:
@@ -1037,6 +1046,8 @@ int set_chl_out_sel(RS_OUT_E rs_out, DATA_SRC src_sel) {
     }
 
     write_reg(FPGA1, REG_DAC_OUT_SEL, new_value);
+    SO_DEBUG("rs_out:%d, src_sel:%d, new_value:%d",rs_out,src_sel, new_value);
+    SO_DEBUG("addr:0x%X, value:0x%X", REG_DAC_OUT_SEL, new_value);
     return FPGA_OK;
 }
 
@@ -1171,6 +1182,7 @@ int set_chl_delay(RS_OUT_E rs_out, ALG_PATH_E path, int delay) {
         SO_DEBUG("set_chl_delay delay overflow");
     }
     write_reg(FPGA1, REG_DELAY[rs_out][path], delay_clk);
+    SO_DEBUG("delay_clk:%d", delay_clk);
     return FPGA_OK;
 }
 
@@ -1213,6 +1225,7 @@ int set_dpl_df(RS_OUT_E rs_out, ALG_PATH_E path, float freq) {
             reg_dpl_fd = (uint32_t)(int32_t)rounded_dpl_fd;  //即使 reg_rounded 为负，也会正确转换为 uint32_t 的补码形式
 
             write_reg(FPGA1, REG_DPL_FDI[rs_out][path][a], reg_dpl_fd);
+            SO_DEBUG("i = %d, reg_dpl_fdi:%d", a, reg_dpl_fd);
             a++;
         }
         else {
@@ -1222,6 +1235,7 @@ int set_dpl_df(RS_OUT_E rs_out, ALG_PATH_E path, float freq) {
             rounded_dpl_fdq = round(dpl_fd_q);
             reg_dpl_fdq = (uint32_t)(int32_t)rounded_dpl_fdq;  //即使 reg_rounded 为负，也会正确转换为 uint32_t 的补码形式
             write_reg(FPGA1, REG_DPL_FDQ[rs_out][path][b], reg_dpl_fdq);
+            SO_DEBUG("q = %d,reg_dpl_fdq:%d",b, reg_dpl_fdq);
             b++;
         }
     }
@@ -1280,6 +1294,7 @@ int set_gain(RS_OUT_E rs_out, ALG_PATH_E path, float gain) {
     qDebug() << "成功调用set_gain()"<<"rs_out"<<rs_out<<"path"<<path<<"gain"<<gain;
     return FPGA_OK;
 #endif
+
     int ret;
     unsigned int reg_gain = pow(10, (gain / 10)) * 4096;
 
@@ -1294,6 +1309,7 @@ int set_gain(RS_OUT_E rs_out, ALG_PATH_E path, float gain) {
     }
 
     write_reg(FPGA1, REG_gain[rs_out][path], reg_gain);
+    SO_DEBUG("reg_gain:%d", reg_gain);
     return FPGA_OK;
 
 }
@@ -1873,8 +1889,8 @@ int fpga_init() {
 
 
 
-        //设置自动增益控制门限（高门限和低门限）
-
+        //设置为手动增益，衰减设置为0
+        set_rx_att_value((RS_IN_E)rs_in, 0.0f);
         //通道数据源初始化为空
         set_chl_out_sel((RS_OUT_E)rs_in, DATA_SRC_NONE);
 
@@ -1897,12 +1913,12 @@ int fpga_init() {
     }
 
     for (int rs_out = RS_OUT_1; rs_out < RS_OUT_MAX; rs_out++) {
-        ret = set_chl_sw((RS_OUT_E)rs_out, 1);
+        ret = set_chl_sw((RS_OUT_E)rs_out, 0);
         if (ret != FPGA_OK) {
             return ret;
         }
 
-        ret = set_chl_sw4((RS_OUT_E)rs_out, (rs_out+1));
+        ret = set_chl_sw4((RS_OUT_E)rs_out, rs_out);
         if (ret != FPGA_OK) {
             return ret;
         }
@@ -1940,11 +1956,17 @@ int fpga_init() {
             return ret;
         }
     }
+
     //设置ptt门限和fpga读取adc时间
-    ret = set_ptt_gate(350);
+    ret = set_ptt_gate(0x350);
     ret = set_ladc_tap(2000);
 
-
+    //算法关闭
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 5; j++) {
+            set_bypass_dpl_iq(static_cast<RS_OUT_E>(i), static_cast<ALG_PATH_E>(j), 1, 1);
+        }
+    }
 
     return FPGA_OK;
 }

@@ -4,9 +4,14 @@
 #include <QApplication>
 #include "fpga_driver.h"
 #include <QMessageBox>
+#include <QMetaType>
+#include "channelparaconifg.h"
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    // 注册自定义类型用于跨线程信号槽传递
+    qRegisterMetaType<ModelParaSetting>("ModelParaSetting");
 
     // 禁用 Qt 高 DPI 缩放（关键，避免嵌入式屏幕显示模糊或尺寸异常）
     app.setAttribute(Qt::AA_DisableHighDpiScaling);

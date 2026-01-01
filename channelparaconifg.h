@@ -63,7 +63,8 @@ typedef struct ModelParaSetting
     int multipathNum;               //多径数量
     int filterNum;                  //滤波器编号
     QList<MultiPathType> multipathType;    //多径设置
-    bool switchFlag;                    //开关状态
+    bool switchFlag=false;                    //开关状态
+    bool isChange=false; //配置是否改变
 }ModelParaSetting;
 
 class ChannelParaConifg : public QObject

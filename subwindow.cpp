@@ -361,7 +361,11 @@ void SubWindow::closeSubWindow()
 void SubWindow::startChannelSimu()
 {
     qDebug()<<"startChannelSimu--------------------------------1";
+    // QMutexLocker locker(&globalMutex);
     ModelParaSetting config;
+    if(globalParaMap.contains(config.modelName)){
+        config=globalParaMap[config.modelName];
+    }
     config.channelNum = m_mainWindow->getChannelNum();
     config.modelName = m_channelModelSelect->getSelectedRadioButtonText();
     config.noisePower = m_channelBasicPara->getNoisePower();
@@ -370,13 +374,11 @@ void SubWindow::startChannelSimu()
     config.filterNum = m_multipathPara->getFilterNum();
     config.multipathNum = m_multipathPara->getMultipathCount();
     config.multipathType = m_multipathPara->getMultipathPara();
-
+    config.isChange=true;
     qDebug()<<"滤波器编号:"<<config.filterNum;
+    globalParaMap[config.modelName] = config;
 
-    {
-        QMutexLocker locker(&globalMutex);
-        globalParaMap[config.modelName] = config;
-    }
+
     qDebug()<<"下发配置,信道号"<<config.channelNum;
     if(IS_VALID_DYNAMIC_CHANNEL(config.channelNum)){//DAC动态分配信道
         emit configUpdated(config.modelName,config);
@@ -402,7 +404,7 @@ void SubWindow::setJtCfg(int chl,const ModelParaSetting& config){
 }
 //配置干扰器信道参数
 void SubWindow::setGrCfg(int chl,const ModelParaSetting& config){
-     // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
+    // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
     int grIndex = chl - 11;
     int ret=set_gr_att((static_cast<GR_OUT_E>(grIndex)),config.signalAnt); 
     if(ret!=FPGA_OK){

@@ -238,7 +238,7 @@ void RadioChannelManager::sendToHardware(int dacIndex, const ModelParaSetting& p
     int chl=dac_chl[dacIndex] ;
 
     if(chl<0){
-        objRadioNumber=chl_sel_n[chl];
+        objRadioNumber=chl_sel_n[qAbs(chl)];
     }else{
         objRadioNumber=chl_sel_p[chl];
     }
@@ -248,8 +248,8 @@ void RadioChannelManager::sendToHardware(int dacIndex, const ModelParaSetting& p
         return;
     }
 
-    qDebug() << "[信道参数设置] 1、设置1/4选路 - 通道:" << dacIndex << " 值: "<<objRadioNumber;
-    int retsw4 = set_chl_sw4(static_cast<RS_OUT_E>(dacIndex), objRadioNumber);
+    qDebug() << "[信道参数设置] 1、设置1/4选路 - 通道:" << dacIndex << " 值: "<<objRadioNumber-1;
+    int retsw4 = set_chl_sw4(static_cast<RS_OUT_E>(dacIndex), objRadioNumber-1);
     if (retsw4 != FPGA_OK) {
         qDebug() << "[信道参数设置] 1、1/4选路设置失败 - 错误码:" << retsw4;
     } else {
@@ -303,7 +303,7 @@ void RadioChannelManager::sendToHardware(int dacIndex, const ModelParaSetting& p
 
         //频扩
         qDebug() << "  [路径" << path.pathNum << "] 设置路径频扩 - 通道:" << dacIndex << " 路径:" << path.pathNum << " 值:" << path.freSpread << "Hz";
-        int retspread = set_dpl_dfs(static_cast<RS_OUT_E>(dacIndex), static_cast<ALG_PATH_E>(path.pathNum-1), static_cast<float>(path.freSpread));
+        int retspread = set_dpl_df(static_cast<RS_OUT_E>(dacIndex), static_cast<ALG_PATH_E>(path.pathNum-1), static_cast<float>(path.freSpread));
         if (retspread != FPGA_OK) {
             qDebug() << "  [路径" << path.pathNum << "] 路径频扩设置失败 - 错误码:" << retspread;
         } else {
@@ -322,11 +322,12 @@ void RadioChannelManager::sendToHardware(int dacIndex, const ModelParaSetting& p
 
     //4、信道开关 —— 对应信道参数 20
     qDebug() << "[信道参数设置] 4、设置信道开关 - 通道:" << dacIndex << " 值:" << params.switchFlag;
-    int retsw = set_chl_sw(static_cast<RS_OUT_E>(dacIndex), params.switchFlag);
+    int switchFlag= params.switchFlag ? 1:0;
+    int retsw = set_chl_sw(static_cast<RS_OUT_E>(dacIndex), switchFlag);
     if (retsw != FPGA_OK) {
         qDebug() << "[信道参数设置] 4、信道开关设置失败 - 错误码:" << retsw;
     } else {
-        qDebug() << "[信道参数设置] 4、信道开关设置成功";
+        qDebug() << "[信道参数设置] 4、信道开关设置成功" << " 值:" << switchFlag;
     }
 
     //5、算法初始值 —— 暂未知如何取
@@ -407,8 +408,22 @@ bool RadioChannelManager::resetFpgaChl(int dacNum,int chl){
     qDebug() << "[FPGA通道设置] 开始设置FPGA通道:" << dacNum << " 信道编号" << chl;
 
     // 设置DAC输出选择
-    qDebug() << "[FPGA通道设置] 1、设置DAC输出选择 - 通道:" << dacNum << " 信道编号:" << chl;
-    int setChlRet=set_chl_out_sel(static_cast<RS_OUT_E>(dacNum),static_cast<DATA_SRC>(chl));
+    // 查找信道对应的源电台号
+    int sourceRadio = 0; // 默认值
+    for (int i = 0; i < 4; ++i) { // 遍历4个电台
+        for (int j = 0; j < 3; ++j) { // 遍历每个电台的3个信道
+            if (chl_send_tab[i][j] == chl) {
+                sourceRadio = i + 1; // 电台号从1开始计数
+                break;
+            }
+        }
+        if (sourceRadio != 0) {
+            break;
+        }
+    }
+    qDebug() << "[FPGA通道设置] 信道" << chl << "对应的源电台号:" << sourceRadio;
+    qDebug() << "[FPGA通道设置] 1、设置DAC输出选择 - 通道:" << dacNum << " 源电台:" << sourceRadio;
+    int setChlRet=set_chl_out_sel(static_cast<RS_OUT_E>(dacNum),static_cast<DATA_SRC>(sourceRadio));
     if (setChlRet != FPGA_OK) {
         qDebug() << "[FPGA通道设置] 1、DAC输出选择设置失败 - 错误码:" << setChlRet;
         return false;

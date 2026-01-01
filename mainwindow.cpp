@@ -111,6 +111,7 @@ void MainWindow::onChannelSwitchChanged(int channelNum, bool switchFlag)
         // 如果配置的信道编号与当前信道编号匹配
         if (config.channelNum == channelNum) {
             config.switchFlag=switchFlag;
+            config.isChange=true;
             {
                 QMutexLocker locker(&globalMutex);
                 globalParaMap[key]=config;
