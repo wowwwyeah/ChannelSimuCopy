@@ -379,22 +379,14 @@ void SubWindow::startChannelSimu()
     qDebug()<<"滤波器编号:"<<config.filterNum;
     globalParaMap[config.modelName] = config;
 
+    ChannelSetting set;
+    set.signalAnt = config.signalAnt;
+    set.filterNum = config.filterNum;
+    set.multipathType = config.multipathType;
+
+    ChannelCacheManager::instance()->updateChannelParameters(m_mainWindow->getChannelNum(),set);
 
     qDebug()<<"下发配置,信道号"<<config.channelNum;
-    if(IS_VALID_DYNAMIC_CHANNEL(config.channelNum)){//DAC动态分配信道
-        emit configUpdated(config.modelName,config);
-        
-        ChannelSetting set;
-        set.signalAnt = config.signalAnt;
-        set.filterNum = config.filterNum;
-        set.multipathType = config.multipathType;
-
-        ChannelCacheManager::instance()->updateChannelParameters(m_mainWindow->getChannelNum(),set);
-    }else if(IS_VALID_RECON_CHANNEL(config.channelNum)){//侦察设备
-        setJtCfg(config.channelNum,config);
-    }else if(IS_VALID_JAMMER(config.channelNum)){//干扰器
-        setGrCfg(config.channelNum,config);
-    }
 
     m_mainWindow->setChannelPara(config);
     qDebug()<<"startChannelSimu--------------------------------2";

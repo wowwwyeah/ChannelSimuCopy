@@ -542,7 +542,7 @@ double ChannelBasicPara::calculateAttenuationFromDistance(double distanceKm)
     double rxPower = m_radioParams.txPower + m_radioParams.txGain + m_radioParams.rxGain
                      - pathLoss - m_radioParams.otherLoss;
 
-    qDebug()<<"通信距离 "<<distanceKm<<"衰减功率"<<rxPower;
+    //qDebug()<<"通信距离 "<<distanceKm<<"衰减功率"<<rxPower;
     return rxPower;
 }
 
@@ -558,6 +558,6 @@ double ChannelBasicPara::calculateDistanceFromAttenuation(double attenuationDb)
     // 20log10(d) = Lp - 32.44 - 20log10(f)
     double term = maxPathLoss - 32.44 - 20 * log10(m_radioParams.frequency);
     double distance_km = pow(10, term / 20.0);
-    qDebug()<<"衰减功率"<<attenuationDb<<"通信距离 "<<distance_km;
+    //qDebug()<<"衰减功率"<<attenuationDb<<"通信距离 "<<distance_km;
     return distance_km;
 }

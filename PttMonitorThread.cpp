@@ -95,7 +95,7 @@ void PttMonitorThread::run()
         // 当信号量被释放（semaphoreAcquired为true）或者PTT改变时，执行配置下发操作
         if (semaphoreAcquired || pttChanged) {
             if(semaphoreAcquired){
-                qDebug()<<"执行配置信道操作原因：[信道开关改变]";
+                qDebug()<<"执行配置信道操作原因：[信道参数改变]";
             }
 
             // 从管理器获取当前所有DAC通道承载的信道编号列表

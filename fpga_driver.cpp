@@ -1947,7 +1947,7 @@ int fpga_init() {
     }
 
     for (int gr_out = GR_OUT_1; gr_out < GR_OUT_MAX; gr_out++) {
-        ret = set_gr_sw((GR_OUT_E)gr_out, 1);
+        ret = set_gr_sw((GR_OUT_E)gr_out, 0);
         if (ret != FPGA_OK) {
             return ret;
         }
@@ -1956,6 +1956,7 @@ int fpga_init() {
         if (ret != FPGA_OK) {
             return ret;
         }
+        set_gr_out_sel((GR_OUT_E)gr_out,DATA_SRC_NONE);
     }
 
     //设置ptt门限和fpga读取adc时间

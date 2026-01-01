@@ -54,6 +54,12 @@ bool DatabaseManager::createTable()
 }
 bool DatabaseManager::insertParaConfig(const ModelParaSetting &config)
 {
+    // 验证modelName不为空
+    if (config.modelName.isEmpty()) {
+        qWarning() << "Error: modelName cannot be empty!";
+        return false;
+    }
+
     QSqlQuery query;
     query.prepare("INSERT INTO configs (channelNum, modelName, noisePower, signalAnt, comDistance, multipathNum, filterNum, multiPathType) "
                   "VALUES (:channelNum, :modelName, :noisePower, :signalAnt, :comDistance, :multipathNum, :filterNum, :multiPathType)");
@@ -105,16 +111,18 @@ QVector<ModelParaSetting> DatabaseManager::getAllConfigs()
 
 bool DatabaseManager::updateParaConfig(const QString &name, ModelParaSetting &config)
 {
-    QSqlQuery query;
-    query.prepare("UPDATE configs SET channelNum = :channelNum, modelName = :modelName, noisePower = :noisePower, "
-                  "signalAnt = :signalAnt, comDistance = :comDistance, multipathNum = :multipathNum, filterNum = :filterNum, "
-                  "multipathType = :multipathType WHERE modelName = :modelName");
-
-    if (!query.exec()) {
-        qWarning() << "Error: Failed to update config:" << query.lastError().text();
+    // 验证modelName不为空
+    if (config.modelName.isEmpty()) {
+        qWarning() << "Error: modelName cannot be empty!";
         return false;
     }
 
+    QSqlQuery query;
+    query.prepare("UPDATE configs SET channelNum = :channelNum, modelName = :modelName, noisePower = :noisePower, "
+                  "signalAnt = :signalAnt, comDistance = :comDistance, multipathNum = :multipathNum, filterNum = :filterNum, "
+                  "multipathType = :multipathType WHERE modelName = :oldModelName");
+
+    query.bindValue(":oldModelName", name);
     query.bindValue(":channelNum", config.channelNum);
     query.bindValue(":modelName", config.modelName);
     query.bindValue(":noisePower", config.noisePower);
@@ -123,6 +131,12 @@ bool DatabaseManager::updateParaConfig(const QString &name, ModelParaSetting &co
     query.bindValue(":multipathNum", config.multipathNum);
     query.bindValue(":filterNum", config.filterNum);
     query.bindValue(":multiPathType", buildJsonArray(config.multipathType));
+
+    if (!query.exec()) {
+        qWarning() << "Error: Failed to update config:" << query.lastError().text();
+        return false;
+    }
+
     qDebug() << "config update successfully!";
     return true;
 }
