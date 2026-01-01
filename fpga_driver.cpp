@@ -1894,7 +1894,7 @@ int fpga_init() {
         //通道数据源初始化为空
         set_chl_out_sel((RS_OUT_E)rs_in, DATA_SRC_NONE);
 
-        set_rx_att_auto((RS_IN_E)rs_in, true);
+        //set_rx_att_auto((RS_IN_E)rs_in, true);
 
     }
 
