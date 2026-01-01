@@ -25,6 +25,7 @@ SOURCES += \
     PttMonitorThread.cpp \
     RadioChannelManager.cpp \
     channelbasicpara.cpp \
+    channelcachemanager.cpp \
     channelmodelselect.cpp \
     channelparaconifg.cpp \
     channelselect.cpp \
@@ -53,6 +54,7 @@ HEADERS += \
     RadioChannelManager.h \
     channel_utils.h \
     channelbasicpara.h \
+    channelcachemanager.h \
     channelmodelselect.h \
     channelparaconifg.h \
     channelselect.h \

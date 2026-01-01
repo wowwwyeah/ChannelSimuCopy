@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include "fpga_driver.h"
 #include "channel_utils.h"
+#include "channelcachemanager.h"
 PttMonitorThread::PttMonitorThread(ConfigManager* configManager, QObject* parent)
     : QThread(parent)
     , m_stopFlag(0)
@@ -99,56 +100,23 @@ void PttMonitorThread::run()
 
             // 从管理器获取当前所有DAC通道承载的信道编号列表
             QVector<INT8> dacChannels = m_manager->getDacChannels();
-
-            // 提取当前正在使用的信道编号（非0值）
-            QVector<INT8> currentChannelList;
             for (INT8 channel : dacChannels) {
-                if (channel != 0) {
-                    currentChannelList.append(channel);
-                }
-            }
+                int intChannel=static_cast<int>(channel);
+                int absChannel=qAbs(intChannel);
+                auto channelCfgList=ChannelCacheManager::instance()->getAllChannelSettings();
 
-            // 将INT8转换为int后输出，避免字符编码问题
-            QVector<int> intChannelList;
-            for (INT8 channel : currentChannelList) {
-                intChannelList.append(static_cast<int>(channel));
-            }
-            qDebug() << "当前正在使用的信道编号列表:" << intChannelList;
+                if(!channelCfgList.keys().contains(absChannel))continue;
 
-            // 从ConfigManager获取配置信息并发送到硬件
-            if (m_configManager && !currentChannelList.isEmpty()) {
-                // 获取所有配置键
-                QList<QString> keys = m_configManager->getAllConfigKeys();
+                if(channelCfgList[absChannel].isChange||pttChanged){
+                    // 找到该信道对应的DAC通道索引
+                    int dacChannelIndex = dacChannels.indexOf(intChannel);
+                    if (dacChannelIndex != -1) {
+                        // 发送参数到FPGA
+                        m_manager->sendToHardware(dacChannelIndex,channelCfgList[absChannel]);
 
-                qDebug()<<"当前缓存信道配置总数"<<keys.size();
-
-                for (const QString& key : keys) {
-                    ModelParaSetting config = m_configManager->getConfigFromMap(key);
-                    qDebug()<<"当前缓存的配置对应的信道号:"<<config.channelNum;
-                }
-
-                // 遍历当前正在使用的信道编号列表
-                for (INT8 channelNum : currentChannelList) {
-                    // 遍历所有配置，找到匹配当前信道编号的配置
-                    for (const QString& key : keys) {
-                        // 获取配置信息
-                        ModelParaSetting config = m_configManager->getConfigFromMap(key);
-                        if(config.isChange||pttChanged){
-                            // 如果配置的信道编号与当前信道编号匹配
-                            if(qAbs(config.channelNum) == qAbs(channelNum)){
-                                // 找到该信道对应的DAC通道索引
-                                int dacChannelIndex = dacChannels.indexOf(channelNum);
-                                if (dacChannelIndex != -1) {
-                                    // 发送参数到硬件
-                                    m_manager->sendToHardware(dacChannelIndex, config);
-                                    if(pttChanged){
-                                        m_manager->resetFpgaChl(dacChannelIndex,channelNum);
-                                    }
-                                }
-                                config.isChange=false;
-                                m_configManager->updateConfigInMap(key,config);
-                                break; // 找到匹配的配置后跳出内层循环
-                            }
+                        if(pttChanged){
+                            //设置dac输出
+                            m_manager->resetFpgaChl(dacChannelIndex,intChannel);
                         }
                     }
                 }

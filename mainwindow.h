@@ -13,8 +13,7 @@
 #include "configmanager.h"
 #include "databasemanager.h"
 #include "PttMonitorThread.h"
-
-
+#include "channelcachemanager.h"
 class SwipeStackedWidget;
 class PageIndicator;
 class SubWindow;
@@ -44,8 +43,8 @@ public slots:
     void updateStatusBar();
 
 private slots:
-    // 处理配置更新信号的槽函数
-    void handleConfigUpdated(const QString& key, const ModelParaSetting& config);
+    // 处理参数变化信号的槽函数
+    void handleParameterChanged(int channelKey, const ChannelSetting& newSetting);
     // 处理通道开关状态变化信号的槽函数
     void onChannelSwitchChanged(int channelNum, bool switchFlag);
 private:
@@ -56,6 +55,15 @@ private:
     void initDataBase();
 
     void setBtnSize(int width,int height);
+
+    // 控制侦察设备的开关状态
+    int setReconSw(int chl, bool flag);
+    // 控制干扰器的开关状态
+    int setJammerSw(int chl, bool flag);
+    //配置侦察设备信道参数
+    void setJtCfg(int chl,const ChannelSetting& config);
+    //配置干扰器信道参数
+    void setGrCfg(int chl,const ChannelSetting& config);
 
     // 获取电台状态样式
     QString getStatusStyle(const QString &status);

@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QApplication>
 #include "fpga_driver.h"
+#include "channel_utils.h"
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -32,8 +33,13 @@ MainWindow::MainWindow(QWidget *parent)
     m_configManager = new ConfigManager();
     m_channelParaConfig = new ChannelParaConifg();
 
-    // 连接配置更新信号到槽函数
-    connect(m_configManager, &ConfigManager::configUpdated, this, &MainWindow::handleConfigUpdated);
+    // 信道管理器初始化
+    ChannelCacheManager::instance();
+
+    // 连接ChannelCacheManager的参数改变信号到槽函数
+    connect(ChannelCacheManager::instance(), &ChannelCacheManager::parameterChanged, this, &MainWindow::handleParameterChanged);
+    // 连接ChannelCacheManager的开关状态改变信号到槽函数
+    connect(ChannelCacheManager::instance(), &ChannelCacheManager::switchStateChanged, this, &MainWindow::onChannelSwitchChanged);
 
     // 创建并启动PTT监控线程
     m_pttMonitorThread = new PttMonitorThread(m_configManager, this);
@@ -86,47 +92,105 @@ MainWindow::~MainWindow()
         qDebug()<<"fpga delete fail";
     }
 }
-void MainWindow::handleConfigUpdated(const QString& key, const ModelParaSetting& config){
-    // 处理配置更新，唤醒PttMonitorThread线程
-    qDebug()<<"handleConfigUpdated";
-    if (m_pttMonitorThread) {
-        m_pttMonitorThread->wakeUp();
-        qDebug() << "配置更新，唤醒PTT监控线程,信道编号:" << config.channelNum<<"开关状态:"<<config.switchFlag;
+
+//配置侦察设备信道参数
+void MainWindow::setJtCfg(int chl,const ChannelSetting& config){
+    //衰减器
+    qDebug() << "[侦察设备配置] 开始配置侦察设备参数 - 信道:" << chl;
+    // 将侦察设备信道编号(7-10)转换为RS_JT_E索引(0-3)
+    int jtIndex = chl - 7;
+    int ret=set_jt_att_value((static_cast<RS_JT_E>(jtIndex)),config.signalAnt);
+    if(ret!=FPGA_OK){
+        qDebug() << "[侦察设备配置] 1、衰减器设置失败 - 信道:" << chl << " 错误码:" << ret;
+    } else {
+        qDebug() << "[侦察设备配置] 1、衰减器设置成功 - 信道:" << chl << " 值:" << config.signalAnt;
     }
 }
+//配置干扰器信道参数
+void MainWindow::setGrCfg(int chl,const ChannelSetting& config){
+    qDebug() << "[干扰器配置] 开始配置干扰器参数 - 信道:" << chl;
+    // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
+    int grIndex = chl - 11;
+    int ret=set_gr_att((static_cast<GR_OUT_E>(grIndex)),config.signalAnt);
+    if(ret!=FPGA_OK){
+        qDebug() << "[干扰器配置] 1、衰减器设置失败 - 信道:" << chl << " 错误码:" << ret;
+    } else {
+        qDebug() << "[干扰器配置] 1、衰减器设置成功 - 信道:" << chl << " 值:" << config.signalAnt;
+    }
+}
+void MainWindow::handleParameterChanged(int channelKey, const ChannelSetting& newSetting){
+    qDebug() << "[参数变更处理] 收到参数变更通知 - 信道:" << channelKey;
+    if (IS_VALID_DYNAMIC_CHANNEL(channelKey)) { // DAC动态分配信道
+        // 处理参数变化，唤醒PTT监控线程
+        if (m_pttMonitorThread) {
+            m_pttMonitorThread->wakeUp();
+            qDebug() << "[参数变更处理] 1、DAC动态信道参数更新，唤醒PTT监控线程 - 信道:" << channelKey;
+        }
+    } else if (IS_VALID_RECON_CHANNEL(channelKey)) { // 侦察设备
+        qDebug() << "[参数变更处理] 1、侦察设备参数更新，准备配置硬件 - 信道:" << channelKey;
+        setJtCfg(channelKey,newSetting);
+    } else if (IS_VALID_JAMMER(channelKey)) { // 干扰器
+        qDebug() << "[参数变更处理] 1、干扰器参数更新，准备配置硬件 - 信道:" << channelKey;
+        setGrCfg(channelKey,newSetting);
+    } else {
+        qDebug() << "[参数变更处理] 1、无效信道参数更新 - 信道:" << channelKey;
+    }
+}
+
+// 控制侦察设备的开关状态
+int MainWindow::setReconSw(int chl, bool flag)
+{
+    qDebug() << "[侦察设备配置] 开始设置侦察设备开关状态 - 信道:" << chl;
+    // 将侦察设备信道编号(7-10)转换为RS_JT_E索引(0-3)
+    int jtIndex = chl - 7;
+    int retsw = set_jt_sw(static_cast<RS_JT_E>(jtIndex), flag);
+
+    if (retsw != FPGA_OK) {
+        qDebug() << "[侦察设备配置] 1、开关状态设置失败 - 信道:" << chl << " 错误码:" << retsw;
+    } else {
+        qDebug() << "[侦察设备配置] 1、开关状态设置成功 - 信道:" << chl << " 值:" << flag;
+    }
+
+    return retsw;
+}
+
+// 控制干扰器的开关状态
+int MainWindow::setJammerSw(int chl, bool flag)
+{
+    qDebug() << "[干扰器配置] 开始设置干扰器开关状态 - 信道:" << chl;
+    // 将干扰器信道编号(11-15)转换为GR_OUT_E索引(0-4)
+    int grIndex = chl - 11;
+    int retsw = set_gr_sw(static_cast<GR_OUT_E>(grIndex), flag);
+
+    if (retsw != FPGA_OK) {
+        qDebug() << "[干扰器配置] 1、开关状态设置失败 - 信道:" << chl << " 错误码:" << retsw;
+    } else {
+        qDebug() << "[干扰器配置] 1、开关状态设置成功 - 信道:" << chl << " 值:" << flag;
+    }
+
+    return retsw;
+}
+
 void MainWindow::onChannelSwitchChanged(int channelNum, bool switchFlag)
 {
     qDebug() << "接收到通道开关状态变化信号: channel=" << channelNum << ", switchFlag=" << switchFlag;
-
-    // 获取所有配置键
-    QList<QString> keys = m_configManager->getAllConfigKeys();
-
-    qDebug()<<"当前缓存信道配置总数"<<keys.size()<<"当前信道编号:"<<channelNum;
-    ModelParaSetting config;
-    // 遍历所有配置，找到匹配当前信道编号的配置
-    for (const QString& key : keys) {
-        // 获取配置信息
-        config = m_configManager->getConfigFromMap(key);
-
-        // 如果配置的信道编号与当前信道编号匹配
-        if (config.channelNum == channelNum) {
-            config.switchFlag=switchFlag;
-            config.isChange=true;
-            {
-                QMutexLocker locker(&globalMutex);
-                globalParaMap[key]=config;
-            }
-
-            handleConfigUpdated(key,config);
+    // 信道开关控制
+    if (IS_VALID_DYNAMIC_CHANNEL(channelNum)) { // DAC动态分配信道
+        // 处理参数变化，唤醒PTT监控线程
+        if (m_pttMonitorThread) {
+            m_pttMonitorThread->wakeUp();
+            qDebug() << "开关状态变化，唤醒PTT监控线程,信道编号:" << channelNum;
         }
+    } else if (IS_VALID_RECON_CHANNEL(channelNum)) { // 侦察设备
+        setReconSw(channelNum, switchFlag);
+    } else if (IS_VALID_JAMMER(channelNum)) { // 干扰器
+        setJammerSw(channelNum, switchFlag);
     }
 }
 
 void MainWindow::setSubWindow(SubWindow *subWindow)
 {
     m_subWindow = subWindow;
-
-    connect(m_subWindow, &SubWindow::configUpdated, this, &MainWindow::handleConfigUpdated);
 }
 
 void MainWindow::setupUI()

@@ -340,6 +340,136 @@ void RadioChannelManager::sendToHardware(int dacIndex, const ModelParaSetting& p
     qDebug() << "-------------------------------信道参数设置------------------------------------";
 }
 
+void RadioChannelManager::sendToHardware(int dacIndex, const ChannelSetting& params)
+{
+    if(!IS_VALID_DAC_CHANNEL(dacIndex)){
+        qDebug() << "[ChannelSetting参数设置] 通道号错误 -dac 通道:" << dacIndex;
+        return;
+    }
+
+    if(!IS_VALID_DYNAMIC_CHANNEL(qAbs(params.channelNum))){
+        qDebug() << "[信道参数设置] 缓存中的信道号错误 - 信道号:" << params.channelNum;
+        return;
+    }
+    qDebug() <<"";
+    qDebug() << "-------------------------------信道参数设置------------------------------------";
+    // 打印ChannelSetting参数信息
+    // qDebug() << "[ChannelSetting参数设置] 将参数设置到信道" << dacIndex;
+    // qDebug() << "[ChannelSetting参数设置] 信号衰减:" << params.signalAnt;
+    // qDebug() << "[ChannelSetting参数设置] 滤波器编号:" << params.filterNum;
+    // qDebug() << "[ChannelSetting参数设置] 多径类型数量:" << params.multipathType.size();
+    // qDebug() << "[ChannelSetting参数设置] 开关状态：" << params.switchFlag;
+
+    //1、1/4选路
+    int objRadioNumber=-1;//目标电台号
+
+    int chl=dac_chl[dacIndex] ;
+
+    if(chl<0){
+        objRadioNumber=chl_sel_n[qAbs(chl)];
+    }else{
+        objRadioNumber=chl_sel_p[chl];
+    }
+
+    if(objRadioNumber<0){
+        qDebug() << "[信道参数设置] 1、1/4选路设置失败 - 目标电台号错误";
+        return;
+    }
+
+    qDebug() << "[信道参数设置] 1、设置1/4选路 - 通道:" << dacIndex << " 目标电台idnex值(电台号-1): "<<objRadioNumber-1;
+    int retsw4 = set_chl_sw4(static_cast<RS_OUT_E>(dacIndex), objRadioNumber-1);
+    if (retsw4 != FPGA_OK) {
+        qDebug() << "[信道参数设置] 1、1/4选路设置失败 - 错误码:" << retsw4;
+    } else {
+        qDebug() << "[信道参数设置] 1、1/4选路设置成功";
+    }
+
+    //2、衰减 —— 对应信道参数21
+    qDebug() << "[信道参数设置] 2、设置信号衰减 - 通道:" << dacIndex << " 值:" << params.signalAnt;
+    int retatt = set_chl_att(static_cast<RS_OUT_E>(dacIndex), static_cast<float>(params.signalAnt));
+    if (retatt != FPGA_OK) {
+        qDebug() << "[信道参数设置] 2、信号衰减设置失败 - 错误码:" << retatt;
+    } else {
+        qDebug() << "[信道参数设置] 2、信号衰减设置成功";
+    }
+
+    //3、算法参数 —— 对应信道参数0-19
+    // 多径参数
+    qDebug() << "[信道参数设置] 3、设置多径参数 - 通道:" << dacIndex;
+    for (const auto& path : params.multipathType) {
+#if 0
+        qDebug() << "  [路径" << path.pathNum << "] 路径编号:" << path.pathNum;
+        qDebug() << "  [路径" << path.pathNum << "] 相对时延(ns):" << path.relativDelay;
+        qDebug() << "  [路径" << path.pathNum << "] 衰减功率:" << path.antPower;
+        qDebug() << "  [路径" << path.pathNum << "] 路径频移:" << path.freShift;
+        qDebug() << "  [路径" << path.pathNum << "] 路径频扩:" << path.freSpread;
+        qDebug() << "  [路径" << path.pathNum << "] 多普勒谱类型:" << path.dopplerType;
+        qDebug() << "  [路径" << path.pathNum << "] ------------------------------";
+#endif
+        qDebug() <<"";
+        //时延
+        if(!IS_VALID_PATH(path.pathNum)){
+            qDebug() << "  [路径" << path.pathNum << "] 路径编号错误 - 路径:" << path.pathNum;
+            continue;
+        }
+
+        qDebug() << "  [路径" << path.pathNum << "] 设置相对时延 - 通道:" << dacIndex << " 路径:" << path.pathNum << " 值:" << path.relativDelay << "ns";
+        int retdelay = set_chl_delay(static_cast<RS_OUT_E>(dacIndex),static_cast<ALG_PATH_E>(path.pathNum-1), path.relativDelay);
+        if (retdelay != FPGA_OK) {
+            qDebug() << "  [路径" << path.pathNum << "] 相对时延设置失败 - 错误码:" << retdelay;
+        } else {
+            qDebug() << "  [路径" << path.pathNum << "] 相对时延设置成功";
+        }
+
+        //频移
+        qDebug() << "  [路径" << path.pathNum << "] 设置路径频移 - 通道:" << dacIndex << " 路径:" << path.pathNum << " 值:" << path.freShift << "Hz";
+        int retshift = set_dpl_dfs(static_cast<RS_OUT_E>(dacIndex),static_cast<ALG_PATH_E>(path.pathNum-1), static_cast<float>(path.freShift));
+        if (retshift != FPGA_OK) {
+            qDebug() << "  [路径" << path.pathNum << "] 路径频移设置失败 - 错误码:" << retshift;
+        } else {
+            qDebug() << "  [路径" << path.pathNum << "] 路径频移设置成功";
+        }
+
+        //频扩
+        qDebug() << "  [路径" << path.pathNum << "] 设置路径频扩 - 通道:" << dacIndex << " 路径:" << path.pathNum << " 值:" << path.freSpread << "Hz";
+        int retspread = set_dpl_df(static_cast<RS_OUT_E>(dacIndex), static_cast<ALG_PATH_E>(path.pathNum-1), static_cast<float>(path.freSpread));
+        if (retspread != FPGA_OK) {
+            qDebug() << "  [路径" << path.pathNum << "] 路径频扩设置失败 - 错误码:" << retspread;
+        } else {
+            qDebug() << "  [路径" << path.pathNum << "] 路径频扩设置成功";
+        }
+
+        //衰减值
+        qDebug() << "  [路径" << path.pathNum << "] 设置路径衰减功率 - 通道:" << dacIndex << " 路径:" << path.pathNum << " 值:" << path.antPower << "dB";
+        int retgain = set_gain(static_cast<RS_OUT_E>(dacIndex), static_cast<ALG_PATH_E>(path.pathNum-1), static_cast<float>(path.antPower));
+        if (retgain != FPGA_OK) {
+            qDebug() << "  [路径" << path.pathNum << "] 路径衰减功率设置失败 - 错误码:" << retgain;
+        } else {
+            qDebug() << "  [路径" << path.pathNum << "] 路径衰减功率设置成功";
+        }
+        qDebug() <<"";
+    }
+
+    //4、信道开关 —— 对应信道参数 20
+    qDebug() << "[信道参数设置] 4、设置信道开关 - 通道:" << dacIndex << " 值:" << params.switchFlag;
+    int switchFlag= params.switchFlag ? 1:0;
+    int retsw = set_chl_sw(static_cast<RS_OUT_E>(dacIndex), switchFlag);
+    if (retsw != FPGA_OK) {
+        qDebug() << "[信道参数设置] 4、信道开关设置失败 - 错误码:" << retsw;
+    } else {
+        qDebug() << "[信道参数设置] 4、信道开关设置成功" << " 值:" << switchFlag;
+    }
+
+    //5、算法初始值 —— 暂未知如何取
+    //qDebug() << "[信道参数设置] 5、算法初始值设置 - 暂未实现";
+
+    //6、设置滤波器参数
+    //qDebug() << "[信道参数设置] 6、设置滤波器参数 - 通道:" << dacIndex << " 滤波器编号:" << params.filterNum;
+
+    //qDebug() << "[信道参数设置] 所有参数设置完成 - 通道:" << dacIndex;
+    qDebug() << "-------------------------------信道参数设置------------------------------------";
+}
+
 UINT8 RadioChannelManager::getCurrentPtt() const
 {
     return ptt_val_current;
@@ -366,6 +496,7 @@ bool RadioChannelManager::releaseFpgaChl(int dacNum,int chl)
         qDebug() << "[FPGA通道释放] 通道号错误 - 通道:" << dacNum;
         return false;
     }
+    qDebug() <<"";
     qDebug() << "-----------------------------FPGA通道释放--------------------------------------";
     qDebug() << "[FPGA通道释放] 开始释放FPGA通道:" << dacNum << " 信道编号" << chl;
 
@@ -404,6 +535,7 @@ bool RadioChannelManager::resetFpgaChl(int dacNum,int chl){
         qDebug() << "[FPGA通道设置] 缓存中的信道号错误 - 信道号:" << chl;
         return false;
     }
+    qDebug() <<"";
     qDebug() << "-----------------------------FPGA通道设置--------------------------------------";
     qDebug() << "[FPGA通道设置] 开始设置FPGA通道:" << dacNum << " 信道编号" << chl;
 

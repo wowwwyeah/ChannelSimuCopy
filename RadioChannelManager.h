@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QString>
 #include "configmanager.h"
+#include "channelcachemanager.h"
 
 typedef signed char INT8;
 typedef unsigned char UINT8;
@@ -30,6 +31,8 @@ public:
 
     // 发送参数到硬件
     void sendToHardware(int dacIndex, const ModelParaSetting& params);
+    // 发送ChannelSetting参数到硬件
+    void sendToHardware(int dacIndex, const ChannelSetting& params);
     //重设 dacNum:通道号 [1-4] chl:信道号 [-6,6]
     bool resetFpgaChl(int dacNum,int chl);
 private:
